@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:managementt/admin/admin_dashboard.dart';
+import 'package:managementt/admin/employee_dashboard.dart';
 import 'package:managementt/components/app_colors.dart';
 import 'package:managementt/controller/auth_controller.dart';
 import 'package:managementt/controller/member_controller.dart';
@@ -54,7 +55,7 @@ class SplashScreen extends StatelessWidget {
 
       // No saved session — show login.
       if (!auth.isLoggedIn.value) {
-        return LoginPage();
+        return EmployeeDashboard();
       }
 
       // Session restored — render the correct dashboard directly.

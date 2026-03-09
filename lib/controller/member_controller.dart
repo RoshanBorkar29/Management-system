@@ -5,6 +5,7 @@ import 'package:managementt/service/member_service.dart';
 class MemberController extends GetxController {
   final MemberService _memberService = MemberService();
   var members = <Member>[].obs;
+  var filteredMembers = <Member>[].obs;
   var owner = Rxn<Member>();
   var isLoading = false.obs;
   var tasks = <String>[].obs;
@@ -12,6 +13,19 @@ class MemberController extends GetxController {
   void onInit() {
     getMembers();
     super.onInit();
+
+    void searchMember(String searchQuery) {
+      if (searchQuery.isEmpty) {
+        filteredMembers.assignAll(members);
+      } else {
+        filteredMembers.assignAll(
+          members.where(
+            (member) =>
+                member.name.toLowerCase().contains(searchQuery.toLowerCase()),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> addMember(Member member) async {
