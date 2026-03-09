@@ -3,16 +3,23 @@ import 'package:managementt/components/app_colors.dart';
 
 class ProjectCard extends StatelessWidget {
   final String title;
+  final String? subtitle;
+  final String? dueText;
   final String? status;
   final double progress;
   final List<String> teamMembers;
+  final Color accentColor;
   final VoidCallback? onTap;
+
   const ProjectCard({
     super.key,
     required this.title,
+    this.subtitle,
+    this.dueText,
     this.status,
     this.progress = 0.55,
     this.teamMembers = const ['A', 'R', 'K'],
+    this.accentColor = const Color(0xFF2F59F7),
     this.onTap,
   });
 
@@ -22,76 +29,146 @@ class ProjectCard extends StatelessWidget {
     final visibleMembers = teamMembers.take(4).toList();
     final avatarStackWidth = visibleMembers.isEmpty
         ? 0.0
-        : 28 + ((visibleMembers.length - 1) * 18.0);
+        : 26 + ((visibleMembers.length - 1) * 14.0);
+
+    final avatarColors = [
+      const Color(0xFF3B82F6),
+      const Color(0xFFF59E0B),
+      const Color(0xFFEC4899),
+      const Color(0xFF8B5CF6),
+    ];
 
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
         width: MediaQuery.widthOf(context),
         decoration: BoxDecoration(
-          color: AppColors.borderColor,
+          color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white),
+          border: Border.all(color: AppColors.borderColor),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 10),
-            LinearProgressIndicator(
-              value: normalizedProgress,
-              minHeight: 8,
-              borderRadius: BorderRadius.circular(8),
-              backgroundColor: Colors.white,
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                Color.fromARGB(223, 57, 27, 255),
+            Container(
+              height: 2.4,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: accentColor,
+                borderRadius: BorderRadius.circular(99),
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 9),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: Text(
-                    status ?? '${(normalizedProgress * 100).toStringAsFixed(0)}% complete',
-                    style: const TextStyle(fontWeight: FontWeight.w500),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                SizedBox(
-                  width: avatarStackWidth,
-                  height: 28,
-                  child: Stack(
-                    children: List.generate(visibleMembers.length, (index) {
-                      return Positioned(
-                        left: index * 18,
-                        child: CircleAvatar(
-                          radius: 14,
-                          backgroundColor: Colors.white,
-                          child: CircleAvatar(
-                            radius: 12,
-                            backgroundColor: const Color.fromARGB(255, 135, 111, 231),
-                            child: Text(
-                              visibleMembers[index].isEmpty
-                                  ? '?'
-                                  : visibleMembers[index][0].toUpperCase(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                            ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (subtitle != null)
+                        Text(
+                          subtitle!,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.blueGrey.withValues(alpha: 0.9),
                           ),
                         ),
-                        )
-                      );
-                    }),
+                    ],
+                  ),
+                ),
+                if (dueText != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFEEF0),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      dueText!,
+                      style: const TextStyle(
+                        fontSize: 9,
+                        color: Color(0xFFFF4D57),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            LinearProgressIndicator(
+              value: normalizedProgress,
+              minHeight: 4,
+              borderRadius: BorderRadius.circular(8),
+              backgroundColor: const Color(0xFFE8EAF7),
+              valueColor: AlwaysStoppedAnimation<Color>(accentColor),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Row(
+                  children: [
+                    SizedBox(
+                      width: avatarStackWidth,
+                      height: 24,
+                      child: Stack(
+                        children: List.generate(visibleMembers.length, (index) {
+                          return Positioned(
+                            left: index * 14,
+                            child: CircleAvatar(
+                              radius: 11,
+                              backgroundColor: Colors.white,
+                              child: CircleAvatar(
+                                radius: 10,
+                                backgroundColor:
+                                    avatarColors[index % avatarColors.length],
+                                child: Text(
+                                  visibleMembers[index].isEmpty
+                                      ? '?'
+                                      : visibleMembers[index][0].toUpperCase(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      status ?? '0/0 tasks',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 10,
+                        color: Colors.blueGrey.withValues(alpha: 0.9),
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  '${(normalizedProgress * 100).toStringAsFixed(0)}%',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -109,7 +186,7 @@ class ProjectCard extends StatelessWidget {
               ),
           ],
         ),
-        ),
-      );
+      ),
+    );
   }
 }
