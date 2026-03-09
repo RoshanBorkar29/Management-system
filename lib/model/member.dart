@@ -3,7 +3,7 @@ class Member {
   String name;
   String? email;
   String? password;
-  int? mobileNo;
+  String? mobileNo;
   String? role;
   List<String> tasks;
 

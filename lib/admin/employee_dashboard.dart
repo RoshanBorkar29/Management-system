@@ -74,73 +74,75 @@ class EmployeeDashboard extends StatelessWidget {
                 ],
               ),
             ),
-            Obx(() {
-              if (memberController.members.isEmpty) {
-                return Center(child: Text("No Members Found"));
-              }
-              if (memberController.isLoading.value) {
-                return CircularProgressIndicator();
-              }
+            Expanded(
+              child: Obx(() {
+                if (memberController.isLoading.value) {
+                  return Center(child: CircularProgressIndicator());
+                }
+                if (memberController.members.isEmpty) {
+                  return Center(child: Text("No Members Found"));
+                }
 
-              return ListView.builder(
-                itemCount: memberController.members.length,
-                itemBuilder: (context, index) {
-                  final member = memberController.members[index];
+                return ListView.builder(
+                  itemCount: memberController.members.length,
+                  itemBuilder: (context, index) {
+                    final member = memberController.members[index];
 
-                  return InkWell(
-                    onTap: () {
-                      Get.to(() => EmployeeDetailsPage(), arguments: member);
-                    },
-                    child: ContainerDesign(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            member.name,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
+                    return InkWell(
+                      onTap: () {
+                        Get.to(() => EmployeeDetailsPage(), arguments: member);
+                      },
+                      child: ContainerDesign(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              member.name,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.delete),
-                            onPressed: () {
-                              Get.dialog(
-                                AlertDialog(
-                                  title: Text("Confirm Remove"),
-                                  content: Text(
-                                    "Are you sure you want to remove ${member.name} ?",
+                            IconButton(
+                              icon: Icon(Icons.delete),
+                              onPressed: () {
+                                Get.dialog(
+                                  AlertDialog(
+                                    title: Text("Confirm Remove"),
+                                    content: Text(
+                                      "Are you sure you want to remove ${member.name} ?",
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Get.back();
+                                        },
+                                        child: Text("Cancel"),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          if (member.id != null) {
+                                            memberController.removeMember(
+                                              member.id!,
+                                            );
+                                          }
+                                          Get.back();
+                                        },
+                                        child: Text("Delete"),
+                                      ),
+                                    ],
                                   ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () {
-                                        Get.back();
-                                      },
-                                      child: Text("Cancel"),
-                                    ),
-                                    TextButton(
-                                      onPressed: () {
-                                        if (member.id != null) {
-                                          memberController.removeMember(
-                                            member.id!,
-                                          );
-                                        }
-                                        Get.back();
-                                      },
-                                      child: Text("Delete"),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                        ],
+                                );
+                              },
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                },
-              );
-            }),
+                    );
+                  },
+                );
+              }),
+            ),
           ],
         ),
       ),

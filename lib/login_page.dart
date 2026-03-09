@@ -96,7 +96,7 @@ class LoginPage extends StatelessWidget {
                       const SizedBox(height: 40),
                       AppTextfield(
                         controller: userIdController,
-                        label: "User ID",
+                        label: "Email",
                       ),
                       const SizedBox(height: 20),
                       AppTextfield(
@@ -104,39 +104,44 @@ class LoginPage extends StatelessWidget {
                         label: "Password",
                       ),
                       const SizedBox(height: 40),
-                      AppButton(
-                        text: "Login",
-                        buttonColor: Color(0xFF2563EB),
-                        onPressed: () async {
-                          final email = userIdController.text.trim();
-                          final password = passwordController.text.trim();
+                      Obx(
+                        () => _isLoading.value
+                            ? const Center(child: CircularProgressIndicator())
+                            : AppButton(
+                                text: "Login",
+                                buttonColor: Color(0xFF2563EB),
+                                onPressed: () async {
+                                  final email = userIdController.text.trim();
+                                  final password = passwordController.text
+                                      .trim();
 
-                          if (email.isEmpty || password.isEmpty) {
-                            Get.snackbar(
-                              'Error',
-                              'Please enter both User ID and Password',
-                              snackPosition: SnackPosition.BOTTOM,
-                            );
-                            return;
-                          }
+                                  if (email.isEmpty || password.isEmpty) {
+                                    Get.snackbar(
+                                      'Error',
+                                      'Please enter both Email and Password',
+                                      snackPosition: SnackPosition.BOTTOM,
+                                    );
+                                    return;
+                                  }
 
-                          _isLoading.value = true;
-                          try {
-                            final authResponse = await _authService.login(
-                              email,
-                              password,
-                            );
-                            await AuthController.to.setAuthData(authResponse);
-                          } catch (e) {
-                            Get.snackbar(
-                              'Login Failed',
-                              e.toString(),
-                              snackPosition: SnackPosition.BOTTOM,
-                            );
-                          } finally {
-                            _isLoading.value = false;
-                          }
-                        },
+                                  _isLoading.value = true;
+                                  try {
+                                    final authResponse = await _authService
+                                        .login(email, password);
+                                    await AuthController.to.setAuthData(
+                                      authResponse,
+                                    );
+                                  } catch (e) {
+                                    Get.snackbar(
+                                      'Login Failed',
+                                      e.toString(),
+                                      snackPosition: SnackPosition.BOTTOM,
+                                    );
+                                  } finally {
+                                    _isLoading.value = false;
+                                  }
+                                },
+                              ),
                       ),
                     ],
                   ),

@@ -25,6 +25,22 @@ class AuthService {
     }
   }
 
+  /// Register a new user (called when admin adds an employee).
+  Future<void> register(String username, String password, String role) async {
+    final response = await http.post(
+      Uri.parse('${Config.baseUrl}/auth/register'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'username': username,
+        'password': password,
+        'role': role,
+      }),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Registration failed: ${response.body}');
+    }
+  }
+
   Future<void> logout() async {
     try {
       final auth = AuthController.to;

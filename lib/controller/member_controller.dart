@@ -1,9 +1,11 @@
 import 'package:get/get.dart';
 import 'package:managementt/model/member.dart';
+import 'package:managementt/service/auth_service.dart';
 import 'package:managementt/service/member_service.dart';
 
 class MemberController extends GetxController {
   final MemberService _memberService = MemberService();
+  final AuthService _authService = AuthService();
   var members = <Member>[].obs;
   var filteredMembers = <Member>[].obs;
   var owner = Rxn<Member>();
@@ -31,6 +33,12 @@ class MemberController extends GetxController {
   Future<void> addMember(Member member) async {
     isLoading.value = true;
     try {
+      // Create auth user first so the employee can log in.
+      await _authService.register(
+        member.email!,
+        member.password!,
+        member.role!,
+      );
       await _memberService.addMember(member);
       await getMembers();
       Get.back();
