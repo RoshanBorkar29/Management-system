@@ -37,16 +37,16 @@ class TopContributors extends StatelessWidget {
     ];
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -55,13 +55,14 @@ class TopContributors extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Text(
-                '🏆 ',
-                style: TextStyle(fontSize: 20),
-              ),
+              const Text('🏆 ', style: TextStyle(fontSize: 20)),
               const Text(
                 'Top Contributors',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1F2937),
+                ),
               ),
             ],
           ),
@@ -69,10 +70,7 @@ class TopContributors extends StatelessWidget {
           ...contributors.asMap().entries.map((entry) {
             final index = entry.key;
             final contributor = entry.value;
-            return _ContributorCard(
-              contributor: contributor,
-              rank: index + 1,
-            );
+            return _ContributorCard(contributor: contributor, rank: index + 1);
           }),
         ],
       ),
@@ -100,10 +98,7 @@ class _ContributorCard extends StatelessWidget {
   final Contributor contributor;
   final int rank;
 
-  const _ContributorCard({
-    required this.contributor,
-    required this.rank,
-  });
+  const _ContributorCard({required this.contributor, required this.rank});
 
   @override
   Widget build(BuildContext context) {
@@ -185,8 +180,7 @@ class _ContributorCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 child: Text(
                   contributor.tasksCompleted.toString(),
                   style: const TextStyle(
@@ -198,10 +192,7 @@ class _ContributorCard extends StatelessWidget {
               const SizedBox(height: 2),
               const Text(
                 'done',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.grey,
-                ),
+                style: TextStyle(fontSize: 11, color: Colors.grey),
               ),
             ],
           ),

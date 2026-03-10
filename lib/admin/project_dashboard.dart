@@ -23,7 +23,11 @@ class ProjectDashboard extends StatelessWidget {
           children: [
             Text(
               "Project Dashboard",
-              style: TextStyle(color: Colors.white, fontSize: 25),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 25,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             Spacer(),
             InkWell(

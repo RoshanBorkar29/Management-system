@@ -515,6 +515,7 @@ class AdminDashboard extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: 100),
             ],
           ),
         ),

@@ -1,4 +1,3 @@
-
 import 'dart:math';
 import 'package:flutter/material.dart';
 
@@ -12,16 +11,16 @@ class PriorityBreakdown extends StatelessWidget {
     const lowPriority = 0;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -30,7 +29,11 @@ class PriorityBreakdown extends StatelessWidget {
         children: [
           const Text(
             'Priority Breakdown',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1F2937),
+            ),
           ),
           const SizedBox(height: 16),
           Row(
@@ -102,18 +105,8 @@ class _SimpleDonutChart extends StatelessWidget {
 
     return CustomPaint(
       size: const Size(120, 120),
-      painter: _DonutPainter(
-        highPriority,
-        mediumPriority,
-        lowPriority,
-        total,
-      ),
-      child: const Center(
-        child: SizedBox(
-          width: 40,
-          height: 40,
-        ),
-      ),
+      painter: _DonutPainter(highPriority, mediumPriority, lowPriority, total),
+      child: const Center(child: SizedBox(width: 40, height: 40)),
     );
   }
 }
@@ -179,28 +172,22 @@ class _PriorityItem extends StatelessWidget {
         Container(
           width: 12,
           height: 12,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 8),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, color: Colors.grey),
-        ),
+        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
         const SizedBox(width: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(4),
           ),
           child: Text(
             count.toString(),
             style: TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w700,
               color: color,
             ),
           ),
@@ -209,4 +196,3 @@ class _PriorityItem extends StatelessWidget {
     );
   }
 }
-

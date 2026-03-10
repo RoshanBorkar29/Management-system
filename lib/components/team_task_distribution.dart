@@ -15,16 +15,16 @@ class TeamTaskDistribution extends StatelessWidget {
     ];
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -33,7 +33,11 @@ class TeamTaskDistribution extends StatelessWidget {
         children: [
           const Text(
             'Team Task Distribution',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1F2937),
+            ),
           ),
           const SizedBox(height: 16),
           ...teamMembers.map((member) => _TaskBar(member: member)),
@@ -127,20 +131,21 @@ class _TaskBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final totalTasks = 8; // max tasks for proportional sizing
-    
+
     // wrap everything in a Tooltip so that hovering over the task bar
     // shows a little card with the counts for this member.
     return Tooltip(
-      message: 'Done: ${member.done}\nActive: ${member.active}\nTodo: ${member.todo}',
+      message:
+          'Done: ${member.done}\nActive: ${member.active}\nTodo: ${member.todo}',
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(4),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -184,10 +189,7 @@ class _TaskBar extends StatelessWidget {
                         if (member.active > 0)
                           Flexible(
                             flex: member.active,
-                            child: Container(
-                              height: 20,
-                              color: Colors.blue,
-                            ),
+                            child: Container(height: 20, color: Colors.blue),
                           ),
                         // todo (grey)
                         if (member.todo > 0)
@@ -217,16 +219,15 @@ class _TaskBar extends StatelessWidget {
                   flex: 1,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: 
-                         Text(
-                            member.done.toString(),
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                    child: Text(
+                      member.done.toString(),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
               ],

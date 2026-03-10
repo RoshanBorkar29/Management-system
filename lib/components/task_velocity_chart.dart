@@ -1,5 +1,19 @@
 import 'package:flutter/material.dart';
 
+const _weeks = [
+  'Dec 9',
+  'Dec 16',
+  'Dec 23',
+  'Jan 6',
+  'Jan 13',
+  'Jan 20',
+  'Feb 10',
+];
+const _completedY = [0.6, 0.4, 0.5, 0.65, 0.55, 0.45, 0.3];
+const _addedY = [0.75, 0.55, 0.65, 0.45, 0.4, 0.35, 0.2];
+const _completedValues = [5, 8, 7, 6, 7, 8, 10];
+const _addedValues = [3, 6, 5, 8, 9, 10, 12];
+
 class TaskVelocityChart extends StatefulWidget {
   const TaskVelocityChart({super.key});
 
@@ -11,19 +25,43 @@ class _TaskVelocityChartState extends State<TaskVelocityChart> {
   int? hoveredPointIndex;
   Offset? mousePosition;
 
+  List<Offset> _buildPoints(
+    double width,
+    double height,
+    List<double> yFactors,
+  ) {
+    final count = yFactors.length;
+    final padding = 20.0;
+    final usable = width - padding * 2;
+    final step = usable / (count - 1);
+    return List.generate(
+      count,
+      (i) => Offset(padding + step * i, height * yFactors[i]),
+    );
+  }
+
+  int? _getHoveredIndex(Offset position, double width, double height) {
+    const hitRadius = 16.0;
+    final points = _buildPoints(width, height, _completedY);
+    for (int i = 0; i < points.length; i++) {
+      if ((position - points[i]).distance < hitRadius) return i;
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white12,
-        borderRadius: BorderRadius.circular(20),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 5),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -35,81 +73,121 @@ class _TaskVelocityChartState extends State<TaskVelocityChart> {
             children: [
               const Text(
                 'Task Velocity Trend',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1F2937),
+                ),
               ),
-              Text(
-                '8 weeks',
-                style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3F4F6),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  '8 weeks',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF6B7280),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          // simple custom chart using canvas with hover detection
-          MouseRegion(
-            onHover: (event) {
-              setState(() {
-                mousePosition = event.localPosition;
-                hoveredPointIndex = _getHoveredPointIndex(event.localPosition);
-              });
-            },
-            onExit: (_) {
-              setState(() {
-                hoveredPointIndex = null;
-                mousePosition = null;
-              });
-            },
-            child: SizedBox(
-              height: 160,
-              width: 460, // Increased width for longer chart
-              child: Stack(
-                children: [
-                  CustomPaint(
-                    painter: _TrendChartPainter(hoveredPointIndex: hoveredPointIndex),
-                    size: Size.infinite,
+          const SizedBox(height: 20),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final chartWidth = constraints.maxWidth;
+              const chartHeight = 150.0;
+              return MouseRegion(
+                onHover: (event) {
+                  setState(() {
+                    mousePosition = event.localPosition;
+                    hoveredPointIndex = _getHoveredIndex(
+                      event.localPosition,
+                      chartWidth,
+                      chartHeight,
+                    );
+                  });
+                },
+                onExit: (_) {
+                  setState(() {
+                    hoveredPointIndex = null;
+                    mousePosition = null;
+                  });
+                },
+                child: SizedBox(
+                  height: chartHeight + 24,
+                  width: chartWidth,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      CustomPaint(
+                        painter: _TrendChartPainter(
+                          hoveredPointIndex: hoveredPointIndex,
+                          chartWidth: chartWidth,
+                          chartHeight: chartHeight,
+                        ),
+                        size: Size(chartWidth, chartHeight),
+                      ),
+                      if (hoveredPointIndex != null && mousePosition != null)
+                        Positioned(
+                          left: (mousePosition!.dx + 100 > chartWidth)
+                              ? mousePosition!.dx - 100
+                              : mousePosition!.dx + 12,
+                          top: (mousePosition!.dy - 60).clamp(
+                            0,
+                            chartHeight - 20,
+                          ),
+                          child: _HoverTooltip(pointIndex: hoveredPointIndex!),
+                        ),
+                    ],
                   ),
-                  if (hoveredPointIndex != null && mousePosition != null)
-                    Positioned(
-                      left: mousePosition!.dx + 10,
-                      top: mousePosition!.dy - 40,
-                      child: _HoverTooltip(pointIndex: hoveredPointIndex!),
-                    ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           ),
-          const SizedBox(height: 16),
-          // legend
+          const SizedBox(height: 8),
+          // Legend
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 8,
-                    height: 4,
-                    color: Colors.blue,
-                  ),
-                  const SizedBox(width: 4),
-                  const Text(
-                    'Completed',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                ],
+              Container(
+                width: 12,
+                height: 3,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3B82F6),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-              const SizedBox(width: 24),
-              Row(
-                children: [
-                  Container(
-                    width: 8,
-                    height: 4,
-                    color: Colors.teal,
-                  ),
-                  const SizedBox(width: 4),
-                  const Text(
-                    'Added',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                ],
+              const SizedBox(width: 6),
+              const Text(
+                'Completed',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Color(0xFF9CA3AF),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(width: 20),
+              Container(
+                width: 12,
+                height: 3,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 6),
+              const Text(
+                'Added',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Color(0xFF9CA3AF),
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),
@@ -117,135 +195,124 @@ class _TaskVelocityChartState extends State<TaskVelocityChart> {
       ),
     );
   }
-
-  int? _getHoveredPointIndex(Offset position) {
-    const double hitRadius = 12;
-    final completedPoints = [
-      Offset(20, 160 * 0.6),
-      Offset(70, 160 * 0.4),
-      Offset(120, 160 * 0.5),
-      Offset(170, 160 * 0.65),
-      Offset(220, 160 * 0.55),
-      Offset(270, 160 * 0.45),
-      Offset(320, 160 * 0.3),
-    ];
-
-    for (int i = 0; i < completedPoints.length; i++) {
-      final distance = (position - completedPoints[i]).distance;
-      if (distance < hitRadius) {
-        return i;
-      }
-    }
-    return null;
-  }
 }
 
 class _TrendChartPainter extends CustomPainter {
   final int? hoveredPointIndex;
+  final double chartWidth;
+  final double chartHeight;
 
-  _TrendChartPainter({this.hoveredPointIndex});
+  _TrendChartPainter({
+    this.hoveredPointIndex,
+    required this.chartWidth,
+    required this.chartHeight,
+  });
+
+  List<Offset> _buildPoints(List<double> yFactors) {
+    final count = yFactors.length;
+    final padding = 20.0;
+    final usable = chartWidth - padding * 2;
+    final step = usable / (count - 1);
+    return List.generate(
+      count,
+      (i) => Offset(padding + step * i, chartHeight * yFactors[i]),
+    );
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
-    // completed line data
-    final completedPoints = [
-      Offset(20, size.height * 0.6),
-      Offset(70, size.height * 0.4),
-      Offset(120, size.height * 0.5),
-      Offset(170, size.height * 0.65),
-      Offset(220, size.height * 0.55),
-      Offset(270, size.height * 0.45),
-      Offset(320, size.height * 0.3),
-    ];
+    final completedPoints = _buildPoints(_completedY);
+    final addedPoints = _buildPoints(_addedY);
 
-    // added line data
-    final addedPoints = [
-      Offset(20, size.height * 0.75),
-      Offset(70, size.height * 0.55),
-      Offset(120, size.height * 0.65),
-      Offset(170, size.height * 0.45),
-      Offset(220, size.height * 0.4),
-      Offset(270, size.height * 0.35),
-      Offset(320, size.height * 0.2),
-    ];
+    // Grid lines
+    final gridPaint = Paint()
+      ..color = const Color(0xFFE5E7EB)
+      ..strokeWidth = 0.5;
+    for (int i = 1; i <= 4; i++) {
+      final y = chartHeight * i / 5;
+      canvas.drawLine(Offset(20, y), Offset(chartWidth - 20, y), gridPaint);
+    }
 
+    // Completed line (blue)
     final bluePaint = Paint()
-      ..color = Colors.blue
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
+      ..color = const Color(0xFF3B82F6)
+      ..strokeWidth = 2.5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
 
+    final bluePath = Path()
+      ..moveTo(completedPoints[0].dx, completedPoints[0].dy);
+    for (int i = 1; i < completedPoints.length; i++) {
+      bluePath.lineTo(completedPoints[i].dx, completedPoints[i].dy);
+    }
+    canvas.drawPath(bluePath, bluePaint);
+
+    // Added line (green)
     final tealPaint = Paint()
-      ..color = Colors.teal
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
+      ..color = const Color(0xFF10B981)
+      ..strokeWidth = 2.5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
 
-    final blueDotPaint = Paint()
-      ..color = Colors.blue
-      ..style = PaintingStyle.fill;
-
-    final tealDotPaint = Paint()
-      ..color = Colors.teal
-      ..style = PaintingStyle.fill;
-
-    final blueDotOutlinePaint = Paint()
-      ..color = Colors.blue.withOpacity(0.3)
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
-
-    // draw completed line
-    for (int i = 0; i < completedPoints.length - 1; i++) {
-      canvas.drawLine(completedPoints[i], completedPoints[i + 1], bluePaint);
+    final tealPath = Path()..moveTo(addedPoints[0].dx, addedPoints[0].dy);
+    for (int i = 1; i < addedPoints.length; i++) {
+      tealPath.lineTo(addedPoints[i].dx, addedPoints[i].dy);
     }
+    canvas.drawPath(tealPath, tealPaint);
 
-    // draw added line
-    for (int i = 0; i < addedPoints.length - 1; i++) {
-      canvas.drawLine(addedPoints[i], addedPoints[i + 1], tealPaint);
-    }
-
-    // draw dots at each point
+    // Dots
     for (int i = 0; i < completedPoints.length; i++) {
-      if (hoveredPointIndex == i) {
-        // Draw larger circle with outline when hovered
-        canvas.drawCircle(completedPoints[i], 6, blueDotPaint);
-        canvas.drawCircle(completedPoints[i], 6, blueDotOutlinePaint);
-      } else {
-        canvas.drawCircle(completedPoints[i], 4, blueDotPaint);
+      final isHovered = hoveredPointIndex == i;
+      final r = isHovered ? 5.0 : 3.5;
+      canvas.drawCircle(
+        completedPoints[i],
+        r,
+        Paint()..color = const Color(0xFF3B82F6),
+      );
+      canvas.drawCircle(
+        addedPoints[i],
+        r,
+        Paint()..color = const Color(0xFF10B981),
+      );
+      if (isHovered) {
+        canvas.drawCircle(
+          completedPoints[i],
+          8,
+          Paint()
+            ..color = const Color(0xFF3B82F6).withValues(alpha: 0.15)
+            ..style = PaintingStyle.fill,
+        );
+        canvas.drawCircle(
+          addedPoints[i],
+          8,
+          Paint()
+            ..color = const Color(0xFF10B981).withValues(alpha: 0.15)
+            ..style = PaintingStyle.fill,
+        );
       }
     }
 
-    for (int i = 0; i < addedPoints.length; i++) {
-      if (hoveredPointIndex == i) {
-        // Draw larger circle with outline when hovered
-        canvas.drawCircle(addedPoints[i], 6, tealDotPaint);
-        final tealOutlinePaint = Paint()
-          ..color = Colors.teal.withOpacity(0.3)
-          ..strokeWidth = 2
-          ..style = PaintingStyle.stroke;
-        canvas.drawCircle(addedPoints[i], 6, tealOutlinePaint);
-      } else {
-        canvas.drawCircle(addedPoints[i], 4, tealDotPaint);
-      }
-    }
-
-    // draw x-axis labels
-    final labelStyle = TextStyle(fontSize: 10, color: Colors.black);
+    // X-axis labels
+    final labelStyle = TextStyle(
+      fontSize: 10,
+      color: const Color(0xFF9CA3AF),
+      fontWeight: FontWeight.w500,
+    );
     final textPainter = TextPainter(textDirection: TextDirection.ltr);
-
-    final weeks = ['Dec 9', 'Dec 16', 'Dec 23', 'Jan 6', 'Jan 13', 'Jan 20', 'Feb 10'];
-    for (int i = 0; i < weeks.length; i++) {
-      textPainter.text = TextSpan(text: weeks[i], style: labelStyle);
+    for (int i = 0; i < _weeks.length; i++) {
+      textPainter.text = TextSpan(text: _weeks[i], style: labelStyle);
       textPainter.layout();
-      final offset = Offset(
-        20 + (50 * i) - textPainter.width / 2,
-        size.height + 4,
-      ); 
-      textPainter.paint(canvas, offset);
+      textPainter.paint(
+        canvas,
+        Offset(completedPoints[i].dx - textPainter.width / 2, chartHeight + 6),
+      );
     }
   }
 
   @override
   bool shouldRepaint(covariant _TrendChartPainter oldDelegate) {
-    return oldDelegate.hoveredPointIndex != hoveredPointIndex;
+    return oldDelegate.hoveredPointIndex != hoveredPointIndex ||
+        oldDelegate.chartWidth != chartWidth;
   }
 }
 
@@ -256,21 +323,16 @@ class _HoverTooltip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Data for each week
-    final weeks = ['Dec 9', 'Dec 16', 'Dec 23', 'Jan 6', 'Jan 13', 'Jan 20', 'Feb 10'];
-    final completedValues = [5, 8, 7, 6, 7, 8, 10];
-    final addedValues = [3, 6, 5, 8, 9, 10, 12];
-
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -279,43 +341,48 @@ class _HoverTooltip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            weeks[pointIndex],
+            _weeks[pointIndex],
             style: const TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF374151),
             ),
           ),
           const SizedBox(height: 4),
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Added: ',
-                style: TextStyle(fontSize: 11, color: Colors.grey),
-              ),
-              Text(
-                addedValues[pointIndex].toString(),
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.teal,
+              Container(
+                width: 6,
+                height: 6,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF10B981),
+                  shape: BoxShape.circle,
                 ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'Added: ${_addedValues[pointIndex]}',
+                style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
               ),
             ],
           ),
+          const SizedBox(height: 2),
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Completed: ',
-                style: TextStyle(fontSize: 11, color: Colors.grey),
-              ),
-              Text(
-                completedValues[pointIndex].toString(),
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue,
+              Container(
+                width: 6,
+                height: 6,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF3B82F6),
+                  shape: BoxShape.circle,
                 ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'Completed: ${_completedValues[pointIndex]}',
+                style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
               ),
             ],
           ),

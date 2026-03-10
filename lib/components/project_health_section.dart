@@ -41,16 +41,16 @@ class ProjectHealthSection extends StatelessWidget {
     ];
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -62,7 +62,11 @@ class ProjectHealthSection extends StatelessWidget {
             children: [
               const Text(
                 'Project Health',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1F2937),
+                ),
               ),
               Row(
                 children: [
@@ -190,10 +194,13 @@ class _ProjectCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: project.statusColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
+                      color: project.statusColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       project.status,
@@ -218,26 +225,13 @@ class _ProjectCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           // progress bar
-          Container(
-            width: double.infinity,
-            height: 6,
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(3),
-            ),
-            child: Stack(
-              children: [
-                Container(
-                  width: MediaQuery.of(context).size.width *
-                      (project.healthPercent / 100) *
-                      0.88,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: project.statusColor,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                ),
-              ],
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: project.healthPercent / 100,
+              minHeight: 5,
+              backgroundColor: const Color(0xFFE5E7EB),
+              valueColor: AlwaysStoppedAnimation<Color>(project.statusColor),
             ),
           ),
           const SizedBox(height: 4),
@@ -245,7 +239,9 @@ class _ProjectCard extends StatelessWidget {
             project.daysOverdue ?? project.daysRemaining ?? '',
             style: TextStyle(
               fontSize: 11,
-              color: project.daysOverdue != null ? Colors.red : Colors.grey[500],
+              color: project.daysOverdue != null
+                  ? Colors.red
+                  : Colors.grey[500],
             ),
           ),
         ],

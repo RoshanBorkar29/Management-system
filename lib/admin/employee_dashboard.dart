@@ -22,7 +22,11 @@ class EmployeeDashboard extends StatelessWidget {
           children: [
             Text(
               "Employee Dashboard",
-              style: TextStyle(color: Colors.white, fontSize: 25),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 25,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             Spacer(),
             InkWell(
