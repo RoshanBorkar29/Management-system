@@ -11,13 +11,13 @@ import 'package:managementt/members/member_profile.dart';
 class AdminWrapper extends StatelessWidget {
   AdminWrapper({super.key});
 
-  final AdminNavController navController = Get.put(AdminNavController());
+  final AdminNavController navController = Get.find<AdminNavController>();
 
   final List<Widget> _pages = [
     const AdminDashboard(),
     ProjectDashboard(),
     EmployeeDashboard(),
-    AnalyticsPage(),
+    const AnalyticsPage(),
     const MemberProfilePage(),
   ];
 

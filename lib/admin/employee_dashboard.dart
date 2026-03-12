@@ -25,8 +25,7 @@ const _months = [
 class EmployeeDashboard extends StatelessWidget {
   EmployeeDashboard({super.key});
 
-  final MemberController memberController = Get.put(MemberController());
-  final int totalEmployeeCount = 10;
+  final MemberController memberController = Get.find<MemberController>();
 
   String get formattedDate {
     final now = DateTime.now();
@@ -107,18 +106,22 @@ class EmployeeDashboard extends StatelessWidget {
 
                   const SizedBox(height: 16),
 
-                  /// EMPLOYEE COUNT
-                  Text(
-                    "$totalEmployeeCount total employees",
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                  /// EMPLOYEE COUNT (reactive)
+                  Obx(
+                    () => Text(
+                      "${memberController.members.length} total employees",
+                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                    ),
                   ),
 
                   const SizedBox(height: 10),
 
-                  /// SEARCH
+                  /// SEARCH (reactive with GetX)
                   SizedBox(
                     height: 44,
                     child: TextField(
+                      onChanged: (val) =>
+                          memberController.searchQuery.value = val,
                       decoration: InputDecoration(
                         hintText: "Search employees..",
                         hintStyle: const TextStyle(
@@ -156,7 +159,9 @@ class EmployeeDashboard extends StatelessWidget {
                   );
                 }
 
-                if (memberController.members.isEmpty) {
+                final filtered = memberController.filteredMembers;
+
+                if (filtered.isEmpty) {
                   return const Padding(
                     padding: EdgeInsets.all(30),
                     child: Text("No Members Found"),
@@ -166,10 +171,10 @@ class EmployeeDashboard extends StatelessWidget {
                 return ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: memberController.members.length,
+                  itemCount: filtered.length,
                   padding: EdgeInsets.all(0),
                   itemBuilder: (context, index) {
-                    final member = memberController.members[index];
+                    final member = filtered[index];
 
                     return InkWell(
                       onTap: () {

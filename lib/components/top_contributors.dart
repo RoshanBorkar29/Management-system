@@ -1,40 +1,45 @@
 import 'package:flutter/material.dart';
 
+const _avatarColors = [
+  Color(0xFF7C3AED),
+  Color(0xFF2ECC71),
+  Color(0xFFF39C12),
+  Color(0xFF3498DB),
+  Color(0xFFE91E63),
+];
+
+const _rankIcons = ['🎉', '🏅', '🎖️', '4', '5'];
+
 class TopContributors extends StatelessWidget {
-  const TopContributors({super.key});
+  final List<Map<String, dynamic>> contributors;
+
+  const TopContributors({super.key, required this.contributors});
 
   @override
   Widget build(BuildContext context) {
-    final contributors = [
-      Contributor(
-        name: 'Sarah Chen',
-        avatar: 'SC',
-        avatarColor: const Color(0xFF7C3AED),
-        tasksCompleted: 2,
-        icon: '🎉',
-      ),
-      Contributor(
-        name: 'Priya Patel',
-        avatar: 'PP',
-        avatarColor: const Color(0xFF2ECC71),
-        tasksCompleted: 2,
-        icon: '🏅',
-      ),
-      Contributor(
-        name: 'Marcus Johnson',
-        avatar: 'MJ',
-        avatarColor: const Color(0xFFF39C12),
-        tasksCompleted: 1,
-        icon: '🎖️',
-      ),
-      Contributor(
-        name: 'Tom Williams',
-        avatar: 'TW',
-        avatarColor: Colors.blue,
-        tasksCompleted: 0,
-        icon: '4',
-      ),
-    ];
+    final items = contributors.asMap().entries.map((entry) {
+      final i = entry.key;
+      final d = entry.value;
+      return Contributor(
+        name: d['name'] as String,
+        avatar: d['initials'] as String,
+        avatarColor: _avatarColors[i % _avatarColors.length],
+        tasksCompleted: d['tasksCompleted'] as int,
+        icon: i < _rankIcons.length ? _rankIcons[i] : '${i + 1}',
+      );
+    }).toList();
+
+    if (items.isEmpty) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Center(child: Text('No contributors yet')),
+      );
+    }
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -67,7 +72,7 @@ class TopContributors extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          ...contributors.asMap().entries.map((entry) {
+          ...items.asMap().entries.map((entry) {
             final index = entry.key;
             final contributor = entry.value;
             return _ContributorCard(contributor: contributor, rank: index + 1);
@@ -160,12 +165,16 @@ class _ContributorCard extends StatelessWidget {
                   ),
                   child: Stack(
                     children: [
-                      Container(
-                        width: (contributor.tasksCompleted / 2) * 150,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: contributor.avatarColor,
-                          borderRadius: BorderRadius.circular(2),
+                      FractionallySizedBox(
+                        widthFactor: contributor.tasksCompleted > 0
+                            ? (contributor.tasksCompleted / 10).clamp(0.05, 1.0)
+                            : 0.0,
+                        child: Container(
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: contributor.avatarColor,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
                         ),
                       ),
                     ],

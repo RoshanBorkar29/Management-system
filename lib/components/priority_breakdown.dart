@@ -2,14 +2,19 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 class PriorityBreakdown extends StatelessWidget {
-  const PriorityBreakdown({super.key});
+  final int highCount;
+  final int mediumCount;
+  final int lowCount;
+
+  const PriorityBreakdown({
+    super.key,
+    required this.highCount,
+    required this.mediumCount,
+    required this.lowCount,
+  });
 
   @override
   Widget build(BuildContext context) {
-    const highPriority = 12;
-    const mediumPriority = 7;
-    const lowPriority = 0;
-
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
@@ -43,9 +48,9 @@ class PriorityBreakdown extends StatelessWidget {
                 child: SizedBox(
                   height: 120,
                   child: _SimpleDonutChart(
-                    highPriority: highPriority.toDouble(),
-                    mediumPriority: mediumPriority.toDouble(),
-                    lowPriority: lowPriority.toDouble(),
+                    highPriority: highCount.toDouble(),
+                    mediumPriority: mediumCount.toDouble(),
+                    lowPriority: lowCount.toDouble(),
                   ),
                 ),
               ),
@@ -55,22 +60,22 @@ class PriorityBreakdown extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
+                  children: [
                     _PriorityItem(
                       label: 'High',
-                      count: highPriority,
+                      count: highCount,
                       color: Colors.red,
                     ),
-                    SizedBox(height: 12),
+                    const SizedBox(height: 12),
                     _PriorityItem(
                       label: 'Medium',
-                      count: mediumPriority,
+                      count: mediumCount,
                       color: Colors.orange,
                     ),
-                    SizedBox(height: 12),
+                    const SizedBox(height: 12),
                     _PriorityItem(
                       label: 'Low',
-                      count: lowPriority,
+                      count: lowCount,
                       color: Colors.teal,
                     ),
                   ],

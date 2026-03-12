@@ -1,47 +1,60 @@
 import 'package:flutter/material.dart';
+import 'package:managementt/model/task.dart';
+
+const _avatarColors = [
+  Colors.teal,
+  Colors.blue,
+  Colors.purple,
+  Colors.indigo,
+  Colors.deepOrange,
+];
 
 class DeadlinesAtRisk extends StatelessWidget {
-  const DeadlinesAtRisk({super.key});
+  final List<Task> tasks;
+  final String Function(String ownerId) getMemberName;
+  final String Function(String ownerId) getMemberInitials;
+
+  const DeadlinesAtRisk({
+    super.key,
+    required this.tasks,
+    required this.getMemberName,
+    required this.getMemberInitials,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final riskTasks = [
-      RiskTask(
-        name: 'Payroll Integration',
-        project: 'HR Management System',
-        avatar: 'PP',
-        avatarColor: Colors.teal,
-        daysOverdue: '43d over',
-      ),
-      RiskTask(
-        name: 'Reporting Dashboard',
-        project: 'HR Management System',
-        avatar: 'AK',
-        avatarColor: Colors.blue,
-        daysOverdue: '27d over',
-      ),
-      RiskTask(
-        name: 'User Acceptance Testing',
-        project: 'HR Management System',
-        avatar: 'TW',
-        avatarColor: Colors.blue,
-        daysOverdue: '17d over',
-      ),
-      RiskTask(
-        name: 'Checkout Flow Optimization',
-        project: 'E-Commerce Platform Redesign',
-        avatar: 'SC',
-        avatarColor: Colors.purple,
-        daysOverdue: '15d over',
-      ),
-      RiskTask(
-        name: 'Performance Optimization',
-        project: 'E-Commerce Platform Redesign',
-        avatar: 'AK',
-        avatarColor: Colors.purple,
-        daysOverdue: '12d over',
-      ),
-    ];
+    final today = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    );
+
+    final riskTasks = tasks.asMap().entries.map((entry) {
+      final i = entry.key;
+      final t = entry.value;
+      final daysOver = t.deadLine != null
+          ? today.difference(t.deadLine!).inDays
+          : 0;
+      return RiskTask(
+        name: t.title,
+        project: t.description,
+        avatar: getMemberInitials(t.ownerId),
+        avatarColor: _avatarColors[i % _avatarColors.length],
+        daysOverdue: daysOver > 0 ? '${daysOver}d over' : 'due',
+      );
+    }).toList();
+
+    if (riskTasks.isEmpty) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Center(child: Text('No deadlines at risk')),
+      );
+    }
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -77,9 +90,9 @@ class DeadlinesAtRisk extends StatelessWidget {
                   color: Colors.red,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Text(
-                  '6',
-                  style: TextStyle(
+                child: Text(
+                  '${riskTasks.length}',
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,

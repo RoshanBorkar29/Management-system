@@ -1,4 +1,7 @@
 import 'package:get/get.dart';
+import 'package:managementt/controller/auth_controller.dart';
+import 'package:managementt/controller/dashboard_controller.dart';
+import 'package:managementt/controller/profile_controller.dart';
 import 'package:managementt/model/task.dart';
 import 'package:managementt/service/task_service.dart';
 
@@ -7,15 +10,42 @@ class TaskController extends GetxController {
 
   var tasks = <Task>[].obs;
   var ownerTask = <Task>[].obs;
+  var searchQuery = ''.obs;
   String? ownerId;
   var isLoading = false.obs;
 
+  /// Filtered tasks based on search query — reactive.
+  List<Task> get filteredTasks {
+    if (searchQuery.value.isEmpty) return tasks;
+    final q = searchQuery.value.toLowerCase();
+    return tasks.where((t) => t.title.toLowerCase().contains(q)).toList();
+  }
+
   @override
   void onInit() {
-    getAllTask();
     super.onInit();
-    if (ownerId != null) {
-      getTaskByOwner(ownerId!);
+    final auth = Get.find<AuthController>();
+    ever(auth.isLoggedIn, (loggedIn) {
+      if (loggedIn) {
+        getAllTask();
+        if (ownerId != null) getTaskByOwner(ownerId!);
+      }
+    });
+    Future.microtask(() {
+      if (auth.isLoggedIn.value && tasks.isEmpty) {
+        getAllTask();
+        if (ownerId != null) getTaskByOwner(ownerId!);
+      }
+    });
+  }
+
+  /// Refresh related controllers so dashboard/profile reflect changes.
+  void _refreshRelated() {
+    if (Get.isRegistered<DashboardController>()) {
+      Get.find<DashboardController>().loadDashboard();
+    }
+    if (Get.isRegistered<ProfileController>()) {
+      Get.find<ProfileController>().loadProfile();
     }
   }
 
@@ -24,6 +54,7 @@ class TaskController extends GetxController {
     try {
       await _taskService.addTask(task);
       await getAllTask();
+      _refreshRelated();
     } catch (e) {
       Get.snackbar('Error', 'Failed to add task: $e');
     } finally {
@@ -36,7 +67,7 @@ class TaskController extends GetxController {
     try {
       tasks.value = await _taskService.getAllTask();
     } catch (e) {
-      print("Error fetching tasks: $e"); // you'll see the real error here
+      print("Error fetching tasks: $e");
     } finally {
       isLoading.value = false;
     }
@@ -47,6 +78,7 @@ class TaskController extends GetxController {
     try {
       await _taskService.updateTask(id, newTask);
       await getAllTask();
+      _refreshRelated();
     } catch (e) {
       Get.snackbar('Error', 'Failed to update task: $e');
     } finally {
@@ -80,6 +112,7 @@ class TaskController extends GetxController {
     try {
       await _taskService.deleteTask(id);
       await getAllTask();
+      _refreshRelated();
     } catch (e) {
       Get.snackbar('Error', 'Failed to remove task: $e');
     }

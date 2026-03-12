@@ -27,7 +27,16 @@ class DashboardController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    loadDashboard();
+    final auth = AuthController.to;
+    ever(auth.isLoggedIn, (loggedIn) {
+      if (loggedIn) loadDashboard();
+    });
+    // Deferred check: if auth was already restored before ever() registered.
+    Future.microtask(() {
+      if (auth.isLoggedIn.value && projects.isEmpty && tasks.isEmpty) {
+        loadDashboard();
+      }
+    });
   }
 
   Future<void> loadDashboard() async {
@@ -269,5 +278,122 @@ class DashboardController extends GetxController {
 
   Color projectAccent(int index) {
     return _projectAccents[index % _projectAccents.length];
+  }
+
+  // ── Analytics computed properties ──
+
+  /// Percentage of all items that are not overdue.
+  String get onTimePercent {
+    if (allItems.isEmpty) return '0';
+    final overdue = allItems.where((t) => t.status == 'OVERDUE').length;
+    return (((allItems.length - overdue) / allItems.length) * 100)
+        .toStringAsFixed(0);
+  }
+
+  int get overdueTaskCount =>
+      allItems.where((t) => t.status == 'OVERDUE').length;
+
+  /// Count of all items that are assigned to a member.
+  String get coveragePercent {
+    if (allItems.isEmpty) return '0';
+    final assigned = allItems.where((t) => t.ownerId.isNotEmpty).length;
+    return ((assigned / allItems.length) * 100).toStringAsFixed(0);
+  }
+
+  int get assignedCount => allItems.where((t) => t.ownerId.isNotEmpty).length;
+
+  // ── Priority breakdown ──
+  int get highPriorityCount =>
+      allItems.where((t) => t.priority.toLowerCase() == 'high').length;
+  int get mediumPriorityCount =>
+      allItems.where((t) => t.priority.toLowerCase() == 'medium').length;
+  int get lowPriorityCount =>
+      allItems.where((t) => t.priority.toLowerCase() == 'low').length;
+
+  // ── At-risk deadlines (overdue items) ──
+  List<Task> get atRiskTasks =>
+      allItems.where((t) => t.status == 'OVERDUE').toList();
+
+  // ── Team task distribution ──
+  /// Returns a map of memberId → {name, done, active, todo}
+  List<Map<String, dynamic>> get teamDistribution {
+    final result = <Map<String, dynamic>>[];
+    for (final m in members) {
+      final memberTasks = allItems.where((t) => t.ownerId == m.id).toList();
+      result.add({
+        'name': m.name.split(' ').first,
+        'done': memberTasks.where((t) => t.status == 'DONE').length,
+        'active': memberTasks
+            .where((t) => t.status == 'IN_PROGRESS' || t.status == 'TODO')
+            .length,
+        'todo': memberTasks.where((t) => t.status == 'NOT_STARTED').length,
+      });
+    }
+    return result;
+  }
+
+  // ── Top contributors (ranked by done tasks) ──
+  List<Map<String, dynamic>> get topContributors {
+    final contributors = <Map<String, dynamic>>[];
+    for (final m in members) {
+      final doneCount = allItems
+          .where((t) => t.ownerId == m.id && t.status == 'DONE')
+          .length;
+      contributors.add({
+        'name': m.name,
+        'initials': getInitials(m.name),
+        'tasksCompleted': doneCount,
+      });
+    }
+    contributors.sort(
+      (a, b) =>
+          (b['tasksCompleted'] as int).compareTo(a['tasksCompleted'] as int),
+    );
+    return contributors.take(5).toList();
+  }
+
+  // ── Project health items ──
+  List<Map<String, dynamic>> get projectHealthItems {
+    final result = <Map<String, dynamic>>[];
+    final today = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    );
+    for (final p in projects) {
+      String status;
+      Color statusColor;
+      String timeInfo;
+
+      if (p.status == 'OVERDUE') {
+        status = 'Critical';
+        statusColor = const Color(0xFFEF4444);
+        final daysOver = p.deadLine != null
+            ? today.difference(p.deadLine!).inDays
+            : 0;
+        timeInfo = '${daysOver}d overdue';
+      } else if (p.deadLine != null &&
+          p.deadLine!.difference(today).inDays <= 7) {
+        status = 'At Risk';
+        statusColor = const Color(0xFFF59E0B);
+        timeInfo = '${p.deadLine!.difference(today).inDays}d remaining';
+      } else {
+        status = 'On Track';
+        statusColor = const Color(0xFF10B981);
+        timeInfo = p.deadLine != null
+            ? '${p.deadLine!.difference(today).inDays}d remaining'
+            : '';
+      }
+
+      result.add({
+        'name': p.title,
+        'description': p.description,
+        'status': status,
+        'statusColor': statusColor,
+        'healthPercent': p.progress,
+        'timeInfo': timeInfo,
+      });
+    }
+    return result;
   }
 }

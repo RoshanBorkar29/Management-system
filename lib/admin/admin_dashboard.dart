@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:managementt/components/app_colors.dart';
@@ -17,6 +16,12 @@ class AdminDashboard extends StatelessWidget {
     final dc = Get.find<DashboardController>();
     final topPad = MediaQuery.of(context).padding.top;
 
+    // Ensure data is loaded when this page is shown.
+    // If already loaded, the controller's isLoading guard prevents duplicate calls.
+    if (dc.projects.isEmpty && dc.tasks.isEmpty && !dc.isLoading.value) {
+      dc.loadDashboard();
+    }
+
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       body: Obx(() {
@@ -25,8 +30,10 @@ class AdminDashboard extends StatelessWidget {
         final upcomingDeadlines = dc.deadlineItems;
         final recentActivity = dc.activityItems;
 
-        final totalStatusCount =
-            statusData.fold<int>(0, (sum, item) => sum + item.count);
+        final totalStatusCount = statusData.fold<int>(
+          0,
+          (sum, item) => sum + item.count,
+        );
 
         final completionPercent = dc.completionPercent;
 
@@ -253,8 +260,7 @@ class AdminDashboard extends StatelessWidget {
                                         children: statusData
                                             .map(
                                               (item) => Padding(
-                                                padding:
-                                                    const EdgeInsets.only(
+                                                padding: const EdgeInsets.only(
                                                   bottom: 9,
                                                 ),
                                                 child: Row(
@@ -269,16 +275,18 @@ class AdminDashboard extends StatelessWidget {
                                                           height: 8,
                                                           decoration:
                                                               BoxDecoration(
-                                                            color: item.color,
-                                                            shape:
-                                                                BoxShape.circle,
-                                                          ),
+                                                                color:
+                                                                    item.color,
+                                                                shape: BoxShape
+                                                                    .circle,
+                                                              ),
                                                         ),
-                                                        const SizedBox(width: 8),
+                                                        const SizedBox(
+                                                          width: 8,
+                                                        ),
                                                         Text(
                                                           item.label,
-                                                          style:
-                                                              const TextStyle(
+                                                          style: const TextStyle(
                                                             fontSize: 12,
                                                             color: AppColors
                                                                 .textSecondary,
@@ -288,8 +296,7 @@ class AdminDashboard extends StatelessWidget {
                                                     ),
                                                     Text(
                                                       '${item.count}',
-                                                      style:
-                                                          const TextStyle(
+                                                      style: const TextStyle(
                                                         fontSize: 12,
                                                         fontWeight:
                                                             FontWeight.w600,
@@ -317,15 +324,13 @@ class AdminDashboard extends StatelessWidget {
                         const Divider(color: AppColors.divider, height: 18),
 
                         Row(
-                          mainAxisAlignment:
-                              MainAxisAlignment.spaceBetween,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
                               'Completion',
                               style: TextStyle(
                                 fontSize: 12,
-                                color:
-                                    Colors.blueGrey.withValues(alpha: 0.85),
+                                color: Colors.blueGrey.withValues(alpha: 0.85),
                               ),
                             ),
                             Text(
@@ -351,8 +356,7 @@ class AdminDashboard extends StatelessWidget {
 
               ...List.generate(dc.projects.length, (i) {
                 final project = dc.projects[i];
-                final totalSub =
-                    project.completedTask + project.remainingTask;
+                final totalSub = project.completedTask + project.remainingTask;
 
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 10),

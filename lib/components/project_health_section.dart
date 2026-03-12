@@ -1,44 +1,36 @@
 import 'package:flutter/material.dart';
 
 class ProjectHealthSection extends StatelessWidget {
-  const ProjectHealthSection({super.key});
+  final List<Map<String, dynamic>> items;
+
+  const ProjectHealthSection({super.key, required this.items});
 
   @override
   Widget build(BuildContext context) {
-    final projects = [
-      ProjectHealthItem(
-        name: 'E-Commerce Platform Redesign',
-        company: 'ShopNow Inc.',
-        status: 'Critical',
-        statusColor: Colors.red,
-        healthPercent: 78,
-        daysOverdue: '9d overdue',
-      ),
-      ProjectHealthItem(
-        name: 'Mobile Banking App v2',
-        company: 'TrustBank Corp.',
-        status: 'At Risk',
-        statusColor: Colors.orange,
-        healthPercent: 35,
-        daysRemaining: '36d remaining',
-      ),
-      ProjectHealthItem(
-        name: 'HR Management System',
-        company: 'Internal',
-        status: 'Critical',
-        statusColor: Colors.red,
-        healthPercent: 40,
-        daysOverdue: '37d overdue',
-      ),
-      ProjectHealthItem(
-        name: 'AI Analytics Dashboard',
-        company: 'DataViz Ltd.',
-        status: 'At Risk',
-        statusColor: Colors.orange,
-        healthPercent: 8,
-        daysRemaining: '66d remaining',
-      ),
-    ];
+    final projects = items
+        .map(
+          (item) => ProjectHealthItem(
+            name: item['name'] as String,
+            company: item['description'] as String,
+            status: item['status'] as String,
+            statusColor: item['statusColor'] as Color,
+            healthPercent: item['healthPercent'] as int,
+            timeInfo: item['timeInfo'] as String,
+          ),
+        )
+        .toList();
+
+    if (projects.isEmpty) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Center(child: Text('No projects yet')),
+      );
+    }
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -132,8 +124,7 @@ class ProjectHealthItem {
   final String status;
   final Color statusColor;
   final int healthPercent;
-  final String? daysOverdue;
-  final String? daysRemaining;
+  final String timeInfo;
 
   ProjectHealthItem({
     required this.name,
@@ -141,8 +132,7 @@ class ProjectHealthItem {
     required this.status,
     required this.statusColor,
     required this.healthPercent,
-    this.daysOverdue,
-    this.daysRemaining,
+    required this.timeInfo,
   });
 }
 
@@ -236,10 +226,10 @@ class _ProjectCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            project.daysOverdue ?? project.daysRemaining ?? '',
+            project.timeInfo,
             style: TextStyle(
               fontSize: 11,
-              color: project.daysOverdue != null
+              color: project.status == 'Critical'
                   ? Colors.red
                   : Colors.grey[500],
             ),

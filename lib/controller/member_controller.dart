@@ -1,4 +1,7 @@
 import 'package:get/get.dart';
+import 'package:managementt/controller/auth_controller.dart';
+import 'package:managementt/controller/dashboard_controller.dart';
+import 'package:managementt/controller/profile_controller.dart';
 import 'package:managementt/model/member.dart';
 import 'package:managementt/service/auth_service.dart';
 import 'package:managementt/service/member_service.dart';
@@ -7,33 +10,45 @@ class MemberController extends GetxController {
   final MemberService _memberService = MemberService();
   final AuthService _authService = AuthService();
   var members = <Member>[].obs;
-  var filteredMembers = <Member>[].obs;
+  var searchQuery = ''.obs;
   var owner = Rxn<Member>();
   var isLoading = false.obs;
   var tasks = <String>[].obs;
+
+  /// Filtered members based on search query — reactive.
+  List<Member> get filteredMembers {
+    if (searchQuery.value.isEmpty) return members;
+    final q = searchQuery.value.toLowerCase();
+    return members.where((m) => m.name.toLowerCase().contains(q)).toList();
+  }
+
   @override
   void onInit() {
-    getMembers();
     super.onInit();
-
-    void searchMember(String searchQuery) {
-      if (searchQuery.isEmpty) {
-        filteredMembers.assignAll(members);
-      } else {
-        filteredMembers.assignAll(
-          members.where(
-            (member) =>
-                member.name.toLowerCase().contains(searchQuery.toLowerCase()),
-          ),
-        );
+    final auth = AuthController.to;
+    ever(auth.isLoggedIn, (loggedIn) {
+      if (loggedIn) getMembers();
+    });
+    Future.microtask(() {
+      if (auth.isLoggedIn.value && members.isEmpty) {
+        getMembers();
       }
+    });
+  }
+
+  /// Refresh related controllers so dashboard/profile reflect changes.
+  void _refreshRelated() {
+    if (Get.isRegistered<DashboardController>()) {
+      Get.find<DashboardController>().loadDashboard();
+    }
+    if (Get.isRegistered<ProfileController>()) {
+      Get.find<ProfileController>().loadProfile();
     }
   }
 
   Future<void> addMember(Member member) async {
     isLoading.value = true;
     try {
-      // Create auth user first so the employee can log in.
       await _authService.register(
         member.email!,
         member.password!,
@@ -41,6 +56,7 @@ class MemberController extends GetxController {
       );
       await _memberService.addMember(member);
       await getMembers();
+      _refreshRelated();
       Get.back();
       Get.snackbar('Success', 'Employee added successfully');
     } catch (e) {
@@ -65,6 +81,7 @@ class MemberController extends GetxController {
     try {
       await _memberService.removeMember(id);
       await getMembers();
+      _refreshRelated();
     } catch (e) {
       Get.snackbar('Error', 'Failed to remove member: $e');
     }

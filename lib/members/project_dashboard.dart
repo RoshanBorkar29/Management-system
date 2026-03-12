@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:managementt/admin/add_task.dart';
-import 'package:managementt/admin/register_employee.dart';
 import 'package:managementt/admin/employee_details_page.dart';
 import 'package:managementt/components/animated_gradient_container.dart';
 import 'package:managementt/components/container_design.dart';
@@ -10,7 +9,7 @@ import 'package:managementt/controller/task_controller.dart';
 
 class ProjectDashboard extends StatelessWidget {
   ProjectDashboard({super.key});
-  final TaskController taskController = Get.put(TaskController());
+  final TaskController taskController = Get.find<TaskController>();
   final int totalProjectCount = 10;
   @override
   Widget build(BuildContext context) {

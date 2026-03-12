@@ -2,23 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:managementt/admin/admin_wrapper.dart';
 import 'package:managementt/components/app_colors.dart';
+import 'package:managementt/controller/admin_nav_controller.dart';
 import 'package:managementt/controller/auth_controller.dart';
 import 'package:managementt/controller/dashboard_controller.dart';
 import 'package:managementt/controller/member_controller.dart';
 import 'package:managementt/controller/profile_controller.dart';
 import 'package:managementt/controller/task_controller.dart';
 import 'package:managementt/login_page.dart';
-import 'package:managementt/members/member_dashboard.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Register controllers — AuthController first so others can use it.
-  Get.put(AuthController());
-  Get.lazyPut(() => TaskController());
-  Get.lazyPut(() => MemberController());
-  Get.lazyPut(() => DashboardController());
-  Get.lazyPut(() => ProfileController());
+  // Register controllers permanently so they stay alive
+  // and can cross-refresh each other for real-time updates.
+  Get.put(AuthController(), permanent: true);
+  Get.put(TaskController(), permanent: true);
+  Get.put(MemberController(), permanent: true);
+  Get.put(DashboardController(), permanent: true);
+  Get.put(ProfileController(), permanent: true);
+  Get.put(AdminNavController(), permanent: true);
 
   runApp(const MyApp());
 }

@@ -17,7 +17,15 @@ class ProfileController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    loadProfile();
+    final auth = AuthController.to;
+    ever(auth.isLoggedIn, (loggedIn) {
+      if (loggedIn) loadProfile();
+    });
+    Future.microtask(() {
+      if (auth.isLoggedIn.value && member.value == null) {
+        loadProfile();
+      }
+    });
   }
 
   Future<void> loadProfile() async {

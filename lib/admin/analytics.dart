@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:managementt/components/app_colors.dart';
+import 'package:managementt/controller/dashboard_controller.dart';
 
 import 'package:managementt/components/task_velocity_chart.dart';
 import 'package:managementt/components/project_health_section.dart';
@@ -23,12 +25,9 @@ const _months = [
   'Dec',
 ];
 
-class AnalyticsPage extends StatefulWidget {
-  @override
-  _AnalyticsPageState createState() => _AnalyticsPageState();
-}
+class AnalyticsPage extends StatelessWidget {
+  const AnalyticsPage({super.key});
 
-class _AnalyticsPageState extends State<AnalyticsPage> {
   String get _formattedDate {
     final now = DateTime.now();
     return '${_months[now.month - 1]} ${now.day}, ${now.year}';
@@ -36,11 +35,15 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final dc = Get.find<DashboardController>();
     final topPad = MediaQuery.of(context).padding.top;
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
-      body: SingleChildScrollView(
-        child: SingleChildScrollView(
+      body: Obx(() {
+        final totalItems = dc.allItems.length;
+        final doneItems = dc.allItems.where((t) => t.status == 'DONE').length;
+
+        return SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -104,50 +107,50 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    // ─── Stat cards ───
+                    // ─── Stat cards (reactive) ───
                     Row(
-                      children: const [
+                      children: [
                         Expanded(
                           child: _StatCard(
                             icon: Icons.check_circle_outline_rounded,
-                            color: Color(0xFF2ECC71),
+                            color: const Color(0xFF2ECC71),
                             label: 'Completion',
-                            value: '26%',
-                            subtitle: '5 of 19 tasks',
+                            value: '${dc.completionPercent}%',
+                            subtitle: '$doneItems of $totalItems tasks',
                           ),
                         ),
-                        SizedBox(width: 10),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: _StatCard(
                             icon: Icons.schedule_rounded,
-                            color: Color(0xFF3498DB),
+                            color: const Color(0xFF3498DB),
                             label: 'On‑Time',
-                            value: '58%',
-                            subtitle: '8 overdue',
+                            value: '${dc.onTimePercent}%',
+                            subtitle: '${dc.overdueTaskCount} overdue',
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 10),
                     Row(
-                      children: const [
+                      children: [
                         Expanded(
                           child: _StatCard(
                             icon: Icons.speed_rounded,
-                            color: Color(0xFFF39C12),
-                            label: 'Velocity',
-                            value: '3.2',
-                            subtitle: 'tasks / week',
+                            color: const Color(0xFFF39C12),
+                            label: 'Tasks',
+                            value: '$totalItems',
+                            subtitle: 'total items',
                           ),
                         ),
-                        SizedBox(width: 10),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: _StatCard(
                             icon: Icons.groups_rounded,
-                            color: Color(0xFF9B59B6),
+                            color: const Color(0xFF9B59B6),
                             label: 'Coverage',
-                            value: '100%',
-                            subtitle: '19 assigned',
+                            value: '${dc.coveragePercent}%',
+                            subtitle: '${dc.assignedCount} assigned',
                           ),
                         ),
                       ],
@@ -159,26 +162,34 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
               // ─── Task Velocity Trend Chart ───
               const TaskVelocityChart(),
               const SizedBox(height: 8),
-              // ─── Project Health ───
-              const ProjectHealthSection(),
+              // ─── Project Health (reactive) ───
+              ProjectHealthSection(items: dc.projectHealthItems),
               const SizedBox(height: 8),
-              // ─── Team Task Distribution ───
-              const TeamTaskDistribution(),
+              // ─── Team Task Distribution (reactive) ───
+              TeamTaskDistribution(teamData: dc.teamDistribution),
               const SizedBox(height: 8),
-              // ─── Top Contributors ───
-              const TopContributors(),
+              // ─── Top Contributors (reactive) ───
+              TopContributors(contributors: dc.topContributors),
               const SizedBox(height: 8),
-              // ─── Priority Breakdown ───
-              const PriorityBreakdown(),
+              // ─── Priority Breakdown (reactive) ───
+              PriorityBreakdown(
+                highCount: dc.highPriorityCount,
+                mediumCount: dc.mediumPriorityCount,
+                lowCount: dc.lowPriorityCount,
+              ),
               const SizedBox(height: 8),
-              // ─── Deadlines at Risk ───
-              const DeadlinesAtRisk(),
+              // ─── Deadlines at Risk (reactive) ───
+              DeadlinesAtRisk(
+                tasks: dc.atRiskTasks,
+                getMemberName: dc.getMemberName,
+                getMemberInitials: dc.getMemberInitials,
+              ),
               // bottom padding for nav bar
               const SizedBox(height: 100),
             ],
           ),
-        ),
-      ),
+        );
+      }),
     );
   }
 }

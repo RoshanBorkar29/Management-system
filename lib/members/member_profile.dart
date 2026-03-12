@@ -4,21 +4,14 @@ import 'package:managementt/controller/admin_nav_controller.dart';
 import 'package:managementt/controller/auth_controller.dart';
 import 'package:managementt/controller/profile_controller.dart';
 
-class MemberProfilePage extends StatefulWidget {
+class MemberProfilePage extends StatelessWidget {
   const MemberProfilePage({super.key});
-
-  @override
-  State<MemberProfilePage> createState() => _MemberProfilePageState();
-}
-
-class _MemberProfilePageState extends State<MemberProfilePage>
-    with SingleTickerProviderStateMixin {
-  bool _showProjects = false;
 
   @override
   Widget build(BuildContext context) {
     final pc = Get.find<ProfileController>();
     final ac = Get.find<AuthController>();
+    final showProjects = false.obs;
     final topPad = MediaQuery.of(context).padding.top;
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
@@ -390,19 +383,18 @@ class _MemberProfilePageState extends State<MemberProfilePage>
                         children: [
                           Expanded(
                             child: GestureDetector(
-                              onTap: () =>
-                                  setState(() => _showProjects = false),
+                              onTap: () => showProjects.value = false,
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 10,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: !_showProjects
+                                  color: !showProjects.value
                                       ? Colors.white
                                       : Colors.transparent,
                                   borderRadius: BorderRadius.circular(10),
-                                  boxShadow: !_showProjects
+                                  boxShadow: !showProjects.value
                                       ? [
                                           BoxShadow(
                                             color: Colors.black.withValues(
@@ -418,7 +410,7 @@ class _MemberProfilePageState extends State<MemberProfilePage>
                                   child: Text(
                                     'Tasks (${pc.memberTasks.length})',
                                     style: TextStyle(
-                                      color: !_showProjects
+                                      color: !showProjects.value
                                           ? const Color(0xFF3B5BFD)
                                           : const Color(0xFF9CA3AF),
                                       fontSize: 14,
@@ -431,18 +423,18 @@ class _MemberProfilePageState extends State<MemberProfilePage>
                           ),
                           Expanded(
                             child: GestureDetector(
-                              onTap: () => setState(() => _showProjects = true),
+                              onTap: () => showProjects.value = true,
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 10,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: _showProjects
+                                  color: showProjects.value
                                       ? Colors.white
                                       : Colors.transparent,
                                   borderRadius: BorderRadius.circular(10),
-                                  boxShadow: _showProjects
+                                  boxShadow: showProjects.value
                                       ? [
                                           BoxShadow(
                                             color: Colors.black.withValues(
@@ -458,7 +450,7 @@ class _MemberProfilePageState extends State<MemberProfilePage>
                                   child: Text(
                                     'Projects (${pc.memberProjects.length})',
                                     style: TextStyle(
-                                      color: _showProjects
+                                      color: showProjects.value
                                           ? const Color(0xFF3B5BFD)
                                           : const Color(0xFF9CA3AF),
                                       fontSize: 14,
@@ -476,7 +468,7 @@ class _MemberProfilePageState extends State<MemberProfilePage>
                     // Content
                     AnimatedSwitcher(
                       duration: const Duration(milliseconds: 250),
-                      child: _showProjects
+                      child: showProjects.value
                           ? pc.memberProjects.isEmpty
                                 ? const Padding(
                                     padding: EdgeInsets.symmetric(vertical: 24),

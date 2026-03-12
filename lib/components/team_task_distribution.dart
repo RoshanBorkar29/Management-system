@@ -1,18 +1,34 @@
 import 'package:flutter/material.dart';
 
 class TeamTaskDistribution extends StatelessWidget {
-  const TeamTaskDistribution({super.key});
+  final List<Map<String, dynamic>> teamData;
+
+  const TeamTaskDistribution({super.key, required this.teamData});
 
   @override
   Widget build(BuildContext context) {
-    final teamMembers = [
-      TeamMemberTasks(name: 'Sarah', done: 3, active: 2, todo: 1),
-      TeamMemberTasks(name: 'Priya', done: 2, active: 4, todo: 1),
-      TeamMemberTasks(name: 'Varcus', done: 1, active: 1, todo: 1),
-      TeamMemberTasks(name: 'Tom', done: 0, active: 1, todo: 2),
-      TeamMemberTasks(name: 'Lisa', done: 0, active: 1, todo: 1),
-      TeamMemberTasks(name: 'Alex', done: 1, active: 2, todo: 5),
-    ];
+    final teamMembers = teamData
+        .map(
+          (d) => TeamMemberTasks(
+            name: d['name'] as String,
+            done: d['done'] as int,
+            active: d['active'] as int,
+            todo: d['todo'] as int,
+          ),
+        )
+        .toList();
+
+    if (teamMembers.isEmpty) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Center(child: Text('No team data yet')),
+      );
+    }
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
