@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:managementt/config.dart';
 import 'package:managementt/controller/auth_controller.dart';
+import 'package:managementt/model/pagination_models.dart';
 
 /// Centralized HTTP client that automatically attaches JWT headers
 /// and handles 401 → token refresh → retry logic.
@@ -98,5 +99,40 @@ class ApiService {
       print('ApiService: Token refresh failed — $e');
       return false;
     }
+  }
+
+  /// Fetch paginated data from an endpoint.
+  ///
+  /// Parameters:
+  /// - path: API endpoint path (e.g., '/tasks/paginated/PROJECT')
+  /// - page: Page number (zero-indexed)
+  /// - size: Items per page
+  /// - fromJson: Function to convert JSON to model object
+  ///
+  /// Returns: PaginatedResponse<T> with pagination metadata
+  Future<PaginatedResponse<T>> getPaginated<T>(
+    String path,
+    int page,
+    int size,
+    T Function(Map<String, dynamic>) fromJson,
+  ) async {
+    // Build URL with pagination parameters
+    final uri = Uri.parse('${Config.baseUrl}$path').replace(
+      queryParameters: {'page': page.toString(), 'size': size.toString()},
+    );
+
+    final response = await http.get(uri, headers: _authHeaders());
+
+    final handled = await _handleResponse(
+      response,
+      () => http.get(uri, headers: _authHeaders()),
+    );
+
+    if (handled.statusCode != 200) {
+      throw Exception('Failed to load paginated data: ${handled.statusCode}');
+    }
+
+    final json = jsonDecode(handled.body) as Map<String, dynamic>;
+    return PaginatedResponse<T>.fromJson(json, fromJson);
   }
 }

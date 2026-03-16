@@ -5,11 +5,13 @@ import 'package:managementt/admin/add_task.dart';
 import 'package:managementt/admin/project_detail_page.dart';
 import 'package:managementt/components/app_confirm_dialog.dart';
 import 'package:managementt/components/app_colors.dart';
+import 'package:managementt/components/pagination_loading_indicator.dart';
 import 'package:managementt/components/date_time_helper.dart';
 import 'package:managementt/components/app_render_entrance.dart';
 import 'package:managementt/components/project_card.dart';
 import 'package:managementt/controller/dashboard_controller.dart';
 import 'package:managementt/controller/task_controller.dart';
+import 'package:managementt/controller/project_pagination_controller.dart';
 
 const _months = [
   'Jan',
@@ -26,11 +28,29 @@ const _months = [
   'Dec',
 ];
 
-class ProjectDashboard extends StatelessWidget {
-  ProjectDashboard({super.key});
+class ProjectDashboard extends StatefulWidget {
+  const ProjectDashboard({super.key});
 
+  @override
+  State<ProjectDashboard> createState() => _ProjectDashboardState();
+}
+
+class _ProjectDashboardState extends State<ProjectDashboard> {
+  late ProjectPaginationController paginationController;
   final TaskController taskController = Get.find<TaskController>();
   final DashboardController dc = Get.find<DashboardController>();
+
+  @override
+  void initState() {
+    super.initState();
+    paginationController = Get.put(ProjectPaginationController());
+  }
+
+  @override
+  void dispose() {
+    paginationController.dispose();
+    super.dispose();
+  }
 
   String get formattedDate {
     final now = DateTime.now();
@@ -44,194 +64,209 @@ class ProjectDashboard extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       body: AppRenderEntrance(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
+        child: RefreshIndicator(
+          onRefresh: () async {
+            paginationController.resetPagination();
+            await Future.delayed(const Duration(milliseconds: 500));
+          },
+          child: CustomScrollView(
+            controller: paginationController.scrollController,
+            slivers: [
               /// HEADER
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.fromLTRB(20, topPad + 16, 20, 24),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF7C3AED), Color(0xFF4338CA)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(26),
-                    bottomRight: Radius.circular(26),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    /// TITLE ROW
-                    Row(
-                      children: [
-                        const Text(
-                          "Projects",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const Spacer(),
-                        InkWell(
-                          onTap: () => Get.to(() => AddTask()),
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const FaIcon(
-                              FontAwesomeIcons.plus,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "Overview · $formattedDate",
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
-                        fontSize: 13,
+              SliverAppBar(
+                pinned: true,
+                floating: false,
+                expandedHeight: 220,
+                elevation: 0,
+                backgroundColor: Colors.transparent,
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFF7C3AED), Color(0xFF4338CA)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(26),
+                        bottomRight: Radius.circular(26),
                       ),
                     ),
-                    const SizedBox(height: 16),
-
-                    /// STAT CHIPS
-                    Obx(() {
-                      final projects = taskController.tasks
-                          .where(
-                            (t) => (t.type ?? '').toUpperCase() == 'PROJECT',
-                          )
-                          .toList();
-                      return Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(20, topPad + 16, 20, 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _StatChip(
-                            label: 'Total',
-                            count: projects.length,
-                            color: const Color(0xFF60A5FA),
+                          /// TITLE ROW
+                          Row(
+                            children: [
+                              const Text(
+                                "Projects",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const Spacer(),
+                              InkWell(
+                                onTap: () => Get.to(() => AddTask()),
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const FaIcon(
+                                    FontAwesomeIcons.plus,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                          _StatChip(
-                            label: 'Active',
-                            count: projects
-                                .where((t) => t.status == 'IN_PROGRESS')
-                                .length,
-                            color: const Color(0xFF4ADE80),
+                          Text(
+                            "Overview · $formattedDate",
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.7),
+                              fontSize: 13,
+                            ),
                           ),
-                          _StatChip(
-                            label: 'Completed',
-                            count: projects
-                                .where((t) => t.status == 'DONE')
-                                .length,
-                            color: const Color(0xFFA78BFA),
-                          ),
-                          _StatChip(
-                            label: 'Overdue',
-                            count: projects
-                                .where((t) => t.status == 'OVERDUE')
-                                .length,
-                            color: const Color(0xFFF87171),
+
+                          /// STAT CHIPS
+                          Obx(() {
+                            final projects = paginationController.items;
+                            return Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                _StatChip(
+                                  label: 'Total',
+                                  count: projects.length,
+                                  color: const Color(0xFF60A5FA),
+                                ),
+                                _StatChip(
+                                  label: 'Active',
+                                  count: projects
+                                      .where((t) => t.status == 'IN_PROGRESS')
+                                      .length,
+                                  color: const Color(0xFF4ADE80),
+                                ),
+                                _StatChip(
+                                  label: 'Completed',
+                                  count: projects
+                                      .where((t) => t.status == 'DONE')
+                                      .length,
+                                  color: const Color(0xFFA78BFA),
+                                ),
+                                _StatChip(
+                                  label: 'Overdue',
+                                  count: projects
+                                      .where((t) => t.status == 'OVERDUE')
+                                      .length,
+                                  color: const Color(0xFFF87171),
+                                ),
+                              ],
+                            );
+                          }),
+
+                          /// SEARCH
+                          SizedBox(
+                            height: 44,
+                            child: TextField(
+                              onChanged: (val) =>
+                                  paginationController.updateSearchQuery(val),
+                              decoration: InputDecoration(
+                                hintText: "Search projects…",
+                                hintStyle: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 14,
+                                ),
+                                filled: true,
+                                fillColor: Colors.white.withValues(alpha: 0.12),
+                                prefixIcon: const Icon(
+                                  Icons.search,
+                                  color: Colors.white70,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                              style: const TextStyle(color: Colors.white),
+                            ),
                           ),
                         ],
-                      );
-                    }),
-
-                    const SizedBox(height: 14),
-
-                    /// SEARCH
-                    SizedBox(
-                      height: 44,
-                      child: TextField(
-                        onChanged: (val) =>
-                            taskController.searchQuery.value = val,
-                        decoration: InputDecoration(
-                          hintText: "Search projects…",
-                          hintStyle: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 14,
-                          ),
-                          filled: true,
-                          fillColor: Colors.white.withValues(alpha: 0.12),
-                          prefixIcon: const Icon(
-                            Icons.search,
-                            color: Colors.white70,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
-                        style: const TextStyle(color: Colors.white),
                       ),
                     ),
-                  ],
+                  ),
                 ),
               ),
 
-              const SizedBox(height: 12),
+              /// PROJECT LIST
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
+                sliver: Obx(() {
+                  final state = paginationController.paginationState.value;
 
-              /// PROJECT LIST using ProjectCard
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Obx(() {
-                  if (taskController.isLoading.value) {
-                    return const Padding(
-                      padding: EdgeInsets.all(40),
-                      child: Center(child: CircularProgressIndicator()),
-                    );
-                  }
-
-                  final projects = taskController.tasks
-                      .where((t) => (t.type ?? '').toUpperCase() == 'PROJECT')
-                      .toList();
-
-                  final query = taskController.searchQuery.value
-                      .trim()
-                      .toLowerCase();
-                  final filtered = query.isEmpty
-                      ? projects
-                      : projects
-                            .where((t) => t.title.toLowerCase().contains(query))
-                            .toList();
-
-                  if (filtered.isEmpty) {
-                    return Padding(
-                      padding: const EdgeInsets.all(40),
-                      child: Center(
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.folder_open,
-                              size: 48,
-                              color: Colors.grey.shade400,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              "No projects found",
-                              style: TextStyle(color: Colors.grey.shade500),
-                            ),
-                          ],
+                  if (paginationController.isEmpty &&
+                      !state.isLoading &&
+                      state.error == null) {
+                    return SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.all(40),
+                        child: Center(
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.folder_open,
+                                size: 48,
+                                color: Colors.grey.shade400,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                "No projects found",
+                                style: TextStyle(color: Colors.grey.shade500),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );
                   }
 
-                  return ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: filtered.length,
-                    padding: EdgeInsets.zero,
+                  if (paginationController.isEmpty && state.isLoading) {
+                    return SliverToBoxAdapter(
+                      child: const Padding(
+                        padding: EdgeInsets.all(40),
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    );
+                  }
+
+                  return SliverList.builder(
+                    itemCount: paginationController.items.length + 2,
                     itemBuilder: (context, index) {
-                      final task = filtered[index];
+                      // Show loading indicator at bottom
+                      if (index == paginationController.items.length) {
+                        return PaginationLoadingIndicator(
+                          isLoading: state.isLoading,
+                        );
+                      }
+
+                      // Show end-of-list indicator
+                      if (index == paginationController.items.length + 1) {
+                        return EndOfListIndicator(
+                          show: !state.hasMore && !state.isLoading,
+                        );
+                      }
+
+                      final task = paginationController.items[index];
                       final totalSub = task.completedTask + task.remainingTask;
                       final ownerInitials = dc.getMemberInitials(task.ownerId);
 
@@ -297,8 +332,6 @@ class ProjectDashboard extends StatelessWidget {
                   );
                 }),
               ),
-
-              const SizedBox(height: 100),
             ],
           ),
         ),
@@ -348,3 +381,4 @@ class _StatChip extends StatelessWidget {
     );
   }
 }
+

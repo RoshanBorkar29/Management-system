@@ -16,12 +16,14 @@ class AuthController extends GetxController {
   final username = ''.obs;
   final isLoggedIn = false.obs;
   final isLoading = false.obs;
+  final currentUserId = ''.obs;
 
   // Storage keys
   static const _keyAccessToken = 'access_token';
   static const _keyRefreshToken = 'refresh_token';
   static const _keyRole = 'role';
   static const _keyUsername = 'username';
+  static const _keyCurrentUserId = 'current_user_id';
 
   @override
   void onInit() {
@@ -37,12 +39,14 @@ class AuthController extends GetxController {
       final storedRefresh = await _storage.read(key: _keyRefreshToken);
       final storedRole = await _storage.read(key: _keyRole);
       final storedUsername = await _storage.read(key: _keyUsername);
+      final storedUserId = await _storage.read(key: _keyCurrentUserId);
 
       if (storedAccess != null && storedRefresh != null && storedRole != null) {
         accessToken.value = storedAccess;
         refreshToken.value = storedRefresh;
         role.value = storedRole;
         username.value = storedUsername ?? '';
+        currentUserId.value = storedUserId ?? '';
         isLoggedIn.value = true;
         // SplashScreen reacts to isLoggedIn + role and renders the right widget.
         // Do NOT call Get.offAll here — the navigator isn't ready yet.
@@ -62,7 +66,10 @@ class AuthController extends GetxController {
     accessToken.value = authResponse.accessToken;
     refreshToken.value = authResponse.refreshToken;
     role.value = authResponse.role;
-    if (loginUsername != null) username.value = loginUsername;
+    if (loginUsername != null) {
+      username.value = loginUsername;
+      currentUserId.value = loginUsername; // Use username as user ID
+    }
     isLoggedIn.value = true;
 
     await _storage.write(key: _keyAccessToken, value: authResponse.accessToken);
@@ -73,6 +80,7 @@ class AuthController extends GetxController {
     await _storage.write(key: _keyRole, value: authResponse.role);
     if (loginUsername != null) {
       await _storage.write(key: _keyUsername, value: loginUsername);
+      await _storage.write(key: _keyCurrentUserId, value: loginUsername);
     }
 
     _navigateByRole();
@@ -90,6 +98,7 @@ class AuthController extends GetxController {
     refreshToken.value = '';
     role.value = '';
     username.value = '';
+    currentUserId.value = '';
     isLoggedIn.value = false;
 
     await _storage.deleteAll();
