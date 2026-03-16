@@ -247,16 +247,147 @@ class UserDashboardController extends GetxController {
     return getInitials(getMemberName(ownerId));
   }
 
-  Color projectAccent(Task p) {
-    final statusUpper = (p.status ?? '').toUpperCase();
-    if (statusUpper == 'DONE') return AppColors.success;
-    if (statusUpper == 'IN_PROGRESS') return AppColors.info;
-    if (statusUpper == 'OVERDUE') return AppColors.warning;
-    return const Color(0xFFD1D5DB);
+  String formatDeadline(DateTime? deadline) {
+    if (deadline == null) return '';
+    return DateTimeHelper.remainingDaysLabel(deadline);
   }
 
-  String formatDeadline(DateTime? dt) {
-    if (dt == null) return 'No deadline';
-    return DateTimeHelper.remainingDaysLabel(dt);
+  Color projectAccent(Task item) {
+    return AppColors.stripColor(priority: item.priority, status: item.status);
+  }
+
+  // ── Analytics computed properties ──
+
+  /// Percentage of all items that are not overdue.
+  String get onTimePercent {
+    final allItems = [...projects, ...tasks];
+    if (allItems.isEmpty) return '0';
+    final overdue = allItems.where((t) => t.status == 'OVERDUE').length;
+    return (((allItems.length - overdue) / allItems.length) * 100)
+        .toStringAsFixed(0);
+  }
+
+  int get overdueTaskCount {
+    final allItems = [...projects, ...tasks];
+    return allItems.where((t) => t.status == 'OVERDUE').length;
+  }
+
+  /// Count of all items that are assigned to a member.
+  String get coveragePercent {
+    final allItems = [...projects, ...tasks];
+    if (allItems.isEmpty) return '0';
+    final assigned = allItems.where((t) => t.ownerId.isNotEmpty).length;
+    return ((assigned / allItems.length) * 100).toStringAsFixed(0);
+  }
+
+  int get assignedCount {
+    final allItems = [...projects, ...tasks];
+    return allItems.where((t) => t.ownerId.isNotEmpty).length;
+  }
+
+  // ── Priority breakdown ──
+  int get highPriorityCount {
+    final allItems = [...projects, ...tasks];
+    return allItems.where((t) => t.priority.toLowerCase() == 'high').length;
+  }
+
+  int get mediumPriorityCount {
+    final allItems = [...projects, ...tasks];
+    return allItems.where((t) => t.priority.toLowerCase() == 'medium').length;
+  }
+
+  int get lowPriorityCount {
+    final allItems = [...projects, ...tasks];
+    return allItems.where((t) => t.priority.toLowerCase() == 'low').length;
+  }
+
+  // ── At-risk deadlines (overdue items) ──
+  List<Task> get atRiskTasks {
+    final allItems = [...projects, ...tasks];
+    return allItems.where((t) => t.status == 'OVERDUE').toList();
+  }
+
+  // ── Team task distribution ──
+  List<Map<String, dynamic>> get teamDistribution {
+    final allItems = [...projects, ...tasks];
+    final result = <Map<String, dynamic>>[];
+    for (final m in members) {
+      final memberTasks = allItems.where((t) => t.ownerId == m.id).toList();
+      result.add({
+        'name': m.name.split(' ').first,
+        'done': memberTasks.where((t) => t.status == 'DONE').length,
+        'active': memberTasks
+            .where((t) => t.status == 'IN_PROGRESS' || t.status == 'TODO')
+            .length,
+        'todo': memberTasks.where((t) => t.status == 'NOT_STARTED').length,
+      });
+    }
+    return result;
+  }
+
+  // ── Top contributors (ranked by done tasks) ──
+  List<Map<String, dynamic>> get topContributors {
+    final allItems = [...projects, ...tasks];
+    final contributors = <Map<String, dynamic>>[];
+    for (final m in members) {
+      final doneCount = allItems
+          .where((t) => t.ownerId == m.id && t.status == 'DONE')
+          .length;
+      contributors.add({
+        'name': m.name,
+        'initials': getInitials(m.name),
+        'tasksCompleted': doneCount,
+      });
+    }
+    contributors.sort(
+      (a, b) =>
+          (b['tasksCompleted'] as int).compareTo(a['tasksCompleted'] as int),
+    );
+    return contributors.take(5).toList();
+  }
+
+  // ── Project health items ──
+  List<Map<String, dynamic>> get projectHealthItems {
+    final result = <Map<String, dynamic>>[];
+    final today = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    );
+    for (final p in projects) {
+      String status;
+      Color statusColor;
+      String timeInfo;
+
+      if (p.status == 'OVERDUE') {
+        status = 'Critical';
+        statusColor = const Color(0xFFEF4444);
+        final daysOver = p.deadLine != null
+            ? today.difference(p.deadLine!).inDays
+            : 0;
+        timeInfo = '${daysOver}d overdue';
+      } else if (p.deadLine != null &&
+          p.deadLine!.difference(today).inDays <= 7) {
+        status = 'At Risk';
+        statusColor = const Color(0xFFF59E0B);
+        timeInfo = '${p.deadLine!.difference(today).inDays}d remaining';
+      } else {
+        status = 'On Track';
+        statusColor = const Color(0xFF10B981);
+        timeInfo = p.deadLine != null
+            ? '${p.deadLine!.difference(today).inDays}d remaining'
+            : '';
+      }
+
+      result.add({
+        'name': p.title,
+        'description': p.description,
+        'status': status,
+        'statusColor': statusColor,
+        'healthPercent': p.progress,
+        'timeInfo': timeInfo,
+      });
+    }
+    return result;
   }
 }

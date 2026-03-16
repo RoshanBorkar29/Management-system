@@ -1,153 +1,197 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:managementt/components/app_colors.dart';
+import 'package:managementt/components/app_render_entrance.dart';
+import 'package:managementt/components/task_velocity_chart.dart';
+import 'package:managementt/components/project_health_section.dart';
+import 'package:managementt/components/team_task_distribution.dart';
+import 'package:managementt/components/top_contributors.dart';
+import 'package:managementt/components/priority_breakdown.dart';
+import 'package:managementt/components/deadlines_at_risk.dart';
+import 'package:managementt/controller/user_dashboard_controller.dart';
+
+const _months = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
 
 class UserAnalyticsPage extends StatelessWidget {
   const UserAnalyticsPage({super.key});
 
+  String get _formattedDate {
+    final now = DateTime.now();
+    return '${_months[now.month - 1]} ${now.day}, ${now.year}';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final dc = Get.find<UserDashboardController>();
     final topPad = MediaQuery.of(context).padding.top;
-
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.fromLTRB(16, topPad + 12, 16, 22),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF6366F1), Color(0xFF3B5BEE)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(24),
-                  bottomRight: Radius.circular(24),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'My Analytics',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.85),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
+      backgroundColor: AppColors.scaffoldBackground,
+      body: AppRenderEntrance(
+        child: Obx(() {
+          final allItems = [...dc.projects, ...dc.tasks];
+          final totalItems = allItems.length;
+          final doneItems = allItems.where((t) => t.status == 'DONE').length;
+
+          return SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.fromLTRB(20, topPad + 16, 20, 24),
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF7C3AED), Color(0xFF4338CA)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(24),
+                      bottomRight: Radius.circular(24),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Performance Overview',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
-                      height: 1.15,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.16),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _StatCard(
-                          icon: Icons.assignment_rounded,
-                          count: '0',
-                          label: 'Total Tasks',
-                        ),
-                        _StatCard(
-                          icon: Icons.check_circle_rounded,
-                          count: '0%',
-                          label: 'Completion',
-                        ),
-                        _StatCard(
-                          icon: Icons.speed_rounded,
-                          count: '0',
-                          label: 'Avg Progress',
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            // Analytics sections
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Task Distribution',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFE5E7EB)),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        'Chart will appear here',
-                        style: TextStyle(color: AppColors.textSecondary),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Analytics',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: IconButton(
+                              icon: const Icon(
+                                Icons.tune_rounded,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                              onPressed: () {},
+                              constraints: const BoxConstraints(
+                                minWidth: 40,
+                                minHeight: 40,
+                              ),
+                              padding: EdgeInsets.zero,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Priority Breakdown',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFE5E7EB)),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        'Chart will appear here',
-                        style: TextStyle(color: AppColors.textSecondary),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Performance overview · $_formattedDate',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.7),
+                          fontSize: 13,
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 20),
+                      // Stat cards (reactive)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _StatCard(
+                              icon: Icons.check_circle_outline_rounded,
+                              color: const Color(0xFF2ECC71),
+                              label: 'Completion',
+                              value: '${dc.completionPercent}%',
+                              subtitle: '$doneItems of $totalItems tasks',
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _StatCard(
+                              icon: Icons.schedule_rounded,
+                              color: const Color(0xFF3498DB),
+                              label: 'On-Time',
+                              value: '${dc.onTimePercent}%',
+                              subtitle: '${dc.overdueTaskCount} overdue',
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _StatCard(
+                              icon: Icons.speed_rounded,
+                              color: const Color(0xFFF39C12),
+                              label: 'Tasks',
+                              value: '$totalItems',
+                              subtitle: 'total items',
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _StatCard(
+                              icon: Icons.groups_rounded,
+                              color: const Color(0xFF9B59B6),
+                              label: 'Coverage',
+                              value: '${dc.coveragePercent}%',
+                              subtitle: '${dc.assignedCount} assigned',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 40),
-                ],
-              ),
+                ),
+                const SizedBox(height: 20),
+                // Task Velocity Trend Chart
+                const TaskVelocityChart(),
+                const SizedBox(height: 8),
+                // Project Health (reactive)
+                ProjectHealthSection(items: dc.projectHealthItems),
+                const SizedBox(height: 8),
+                // Team Task Distribution (reactive)
+                TeamTaskDistribution(teamData: dc.teamDistribution),
+                const SizedBox(height: 8),
+                // Top Contributors (reactive)
+                TopContributors(contributors: dc.topContributors),
+                const SizedBox(height: 8),
+                // Priority Breakdown (reactive)
+                PriorityBreakdown(
+                  highCount: dc.highPriorityCount,
+                  mediumCount: dc.mediumPriorityCount,
+                  lowCount: dc.lowPriorityCount,
+                ),
+                const SizedBox(height: 8),
+                // Deadlines at Risk (reactive)
+                DeadlinesAtRisk(
+                  tasks: dc.atRiskTasks,
+                  getMemberName: dc.getMemberName,
+                  getMemberInitials: dc.getMemberInitials,
+                ),
+                // bottom padding for nav bar
+                const SizedBox(height: 100),
+              ],
             ),
-          ],
-        ),
+          );
+        }),
       ),
     );
   }
@@ -155,40 +199,72 @@ class UserAnalyticsPage extends StatelessWidget {
 
 class _StatCard extends StatelessWidget {
   final IconData icon;
-  final String count;
+  final Color color;
   final String label;
+  final String value;
+  final String subtitle;
 
   const _StatCard({
     required this.icon,
-    required this.count,
+    required this.color,
     required this.label,
+    required this.value,
+    required this.subtitle,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Icon(icon, color: Colors.white.withValues(alpha: 0.9), size: 20),
-        const SizedBox(height: 8),
-        Text(
-          count,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w800,
-            fontSize: 18,
-            height: 1,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: color, size: 16),
+              ),
+              const Spacer(),
+              Text(
+                value,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  height: 1,
+                ),
+              ),
+            ],
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.85),
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
+          const SizedBox(height: 10),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-      ],
+          const SizedBox(height: 2),
+          Text(
+            subtitle,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.6),
+              fontSize: 11,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
