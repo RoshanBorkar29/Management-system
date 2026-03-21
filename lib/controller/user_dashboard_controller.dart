@@ -182,6 +182,7 @@ class UserDashboardController extends GetxController {
           AlertItem(
             title: '${project.title} is overdue',
             subtitle: project.description,
+            project: project,
           ),
         );
       }

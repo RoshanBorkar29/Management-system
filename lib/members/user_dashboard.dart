@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:managementt/admin/project_detail_page.dart';
 import 'package:managementt/components/app_colors.dart';
 import 'package:managementt/components/date_time_helper.dart';
 import 'package:managementt/components/app_render_entrance.dart';
@@ -173,7 +174,21 @@ class UserDashboard extends StatelessWidget {
                             ),
                             const SizedBox(height: 8),
                             ...criticalAlerts.map(
-                              (item) => AlertTile(item: item),
+                              (item) => AlertTile(
+                                item: item,
+                                onTap: item.project != null
+                                    ? () => Get.to(
+                                          () => ProjectDetailPage(
+                                            project: item.project!,
+                                            projectMemberNames: [
+                                              dc.getMemberName(
+                                                item.project!.ownerId,
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                    : null,
+                              ),
                             ),
                           ],
                         ),

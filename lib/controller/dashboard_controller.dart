@@ -254,7 +254,7 @@ class DashboardController extends GetxController {
             : remaining == 0
             ? 'Due today'
             : '$remaining d remaining';
-        alerts.add(AlertItem(title: p.title, subtitle: subtitle));
+        alerts.add(AlertItem(title: p.title, subtitle: subtitle, project: p));
       }
     }
     alerts.sort((a, b) => a.subtitle.compareTo(b.subtitle));

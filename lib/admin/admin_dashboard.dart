@@ -176,7 +176,21 @@ class AdminDashboard extends StatelessWidget {
                             ),
                             const SizedBox(height: 8),
                             ...criticalAlerts.map(
-                              (item) => AlertTile(item: item),
+                              (item) => AlertTile(
+                                item: item,
+                                onTap: item.project != null
+                                    ? () => Get.to(
+                                          () => ProjectDetailPage(
+                                            project: item.project!,
+                                            projectMemberNames: [
+                                              dc.getMemberName(
+                                                item.project!.ownerId,
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                    : null,
+                              ),
                             ),
                           ],
                         ),
