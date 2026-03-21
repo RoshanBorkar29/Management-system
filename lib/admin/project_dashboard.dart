@@ -144,7 +144,7 @@ class _ProjectDashboardState extends State<ProjectDashboard> {
         case ProjectStatusFilter.overdue:
           return status == 'OVERDUE';
         case ProjectStatusFilter.notStarted:
-          return status == 'NOT_STARTED';
+          return status == 'NOT_STARTED' || status == 'TODO';
         case ProjectStatusFilter.all:
           return true;
       }
@@ -234,6 +234,11 @@ class _ProjectDashboardState extends State<ProjectDashboard> {
                           Obx(() {
                             final projects = paginationController.items;
                             final completedCount = dc.completedProjectCount;
+                            final notStartedCount = projects.where((t) {
+                              final status = (t.status ?? '').toUpperCase();
+                              return status == 'NOT_STARTED' ||
+                                  status == 'TODO';
+                            }).length;
                             return Wrap(
                               spacing: 8,
                               runSpacing: 8,
@@ -249,6 +254,11 @@ class _ProjectDashboardState extends State<ProjectDashboard> {
                                       .where((t) => t.status == 'IN_PROGRESS')
                                       .length,
                                   color: const Color(0xFF4ADE80),
+                                ),
+                                _StatChip(
+                                  label: 'Not Started',
+                                  count: notStartedCount,
+                                  color: const Color(0xFFE5E7EB),
                                 ),
                                 _StatChip(
                                   label: 'Completed',

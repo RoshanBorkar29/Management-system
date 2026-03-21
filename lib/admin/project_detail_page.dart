@@ -40,12 +40,28 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
       return;
     }
 
-    final role = AuthController.to.role.value;
-    final actorId = role == 'ADMIN'
-        ? AuthController.to.currentUserId.value
-        : (AuthController.to.currentUserId.value.isNotEmpty
-              ? AuthController.to.currentUserId.value
-              : widget.project.ownerId);
+    if (!_canApproveTasks) {
+      Get.snackbar(
+        'Action blocked',
+        'Only the project owner or an admin can approve this task.',
+        backgroundColor: AppColors.error,
+        colorText: Colors.white,
+      );
+      return;
+    }
+
+    final role = _normalizedRole;
+    final actorId = _resolveActorIdForApproval();
+
+    if (actorId.isEmpty) {
+      Get.snackbar(
+        'Action blocked',
+        'We could not resolve your identity for approval. Please relaunch or contact an admin.',
+        backgroundColor: AppColors.error,
+        colorText: Colors.white,
+      );
+      return;
+    }
 
     final ok = await _taskController.approveTaskCompletion(
       taskId: taskId,
@@ -219,6 +235,70 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
     );
     final name = match?.name.trim() ?? '';
     return name.isEmpty ? ownerId : name;
+  }
+
+  String get _projectOwnerId => widget.project.ownerId.trim();
+
+  String get _normalizedRole =>
+      AuthController.to.role.value.trim().toUpperCase();
+
+  String get _currentUsername => AuthController.to.username.value.trim();
+
+  bool get _isAdminSession => _normalizedRole == 'ADMIN';
+
+  String _resolvedMemberIdFromSession() {
+    final username = _currentUsername.toLowerCase();
+    if (username.isEmpty) return '';
+
+    final member = _memberController.members.firstWhereOrNull((m) {
+      final email = (m.email ?? '').trim().toLowerCase();
+      final id = (m.id ?? '').trim().toLowerCase();
+      final name = m.name.trim().toLowerCase();
+      return username == email || username == id || username == name;
+    });
+
+    if (member != null && (member.id ?? '').trim().isNotEmpty) {
+      return member.id!.trim();
+    }
+
+    final stored = AuthController.to.currentUserId.value.trim();
+    return stored;
+  }
+
+  bool get _isProjectOwnerSession {
+    final ownerId = _projectOwnerId;
+    if (ownerId.isEmpty) return false;
+    final normalizedOwner = ownerId.toLowerCase();
+
+    bool matches(String candidate) {
+      final value = candidate.trim();
+      if (value.isEmpty) return false;
+      return value.toLowerCase() == normalizedOwner;
+    }
+
+    return matches(_resolvedMemberIdFromSession()) ||
+        matches(AuthController.to.currentUserId.value) ||
+        matches(_currentUsername);
+  }
+
+  bool get _canApproveTasks => _isAdminSession || _isProjectOwnerSession;
+
+  String _resolveActorIdForApproval() {
+    if (_isAdminSession) {
+      final adminId = AuthController.to.currentUserId.value.trim();
+      if (adminId.isNotEmpty) {
+        return adminId;
+      }
+      final adminUsername = _currentUsername;
+      return adminUsername.isNotEmpty ? adminUsername : 'ADMIN';
+    }
+
+    final ownerId = _projectOwnerId;
+    if (ownerId.isNotEmpty) {
+      return ownerId;
+    }
+
+    return _resolvedMemberIdFromSession();
   }
 
   List<String> _projectMembers(List<Task> tasks) {
@@ -761,19 +841,17 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Column(
-                    children: tasks
-                        .map(
-                          (t) => _TaskCard(
-                            task: t,
-                            deadlineText: _deadlineText(t.deadLine),
-                            ownerName: _memberNameById(t.ownerId),
-                            onApprove:
-                                (t.status ?? '').toUpperCase() == 'REVIEW'
-                                ? () => _approveTask(t)
-                                : null,
-                          ),
-                        )
-                        .toList(),
+                    children: tasks.map((t) {
+                      final status = (t.status ?? '').toUpperCase();
+                      final showApprove =
+                          status == 'REVIEW' && _canApproveTasks;
+                      return _TaskCard(
+                        task: t,
+                        deadlineText: _deadlineText(t.deadLine),
+                        ownerName: _memberNameById(t.ownerId),
+                        onApprove: showApprove ? () => _approveTask(t) : null,
+                      );
+                    }).toList(),
                   ),
                 ),
               const SizedBox(height: 28),

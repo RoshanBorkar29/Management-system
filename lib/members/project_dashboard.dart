@@ -45,31 +45,26 @@ class _ProjectDashboardState extends State<ProjectDashboard> {
     _StatusFilterChipData(
       filter: ProjectStatusFilter.all,
       label: 'All',
-      icon: Icons.blur_on_rounded,
-      color: Color(0xFF7C3AED),
+      color: Color.fromARGB(255, 203, 188, 230),
     ),
     _StatusFilterChipData(
       filter: ProjectStatusFilter.active,
       label: 'In Progress',
-      icon: Icons.play_circle_fill_rounded,
-      color: Color(0xFF14B8A6),
+      color: Color(0xFF2563EB),
     ),
     _StatusFilterChipData(
       filter: ProjectStatusFilter.completed,
       label: 'Completed',
-      icon: Icons.verified_rounded,
-      color: Color(0xFF8B5CF6),
+      color: Color(0xFF14B8A6),
     ),
     _StatusFilterChipData(
       filter: ProjectStatusFilter.notStarted,
       label: 'Not Started',
-      icon: Icons.flag_outlined,
-      color: Color(0xFF2563EB),
+      color: Color.fromARGB(255, 249, 188, 22),
     ),
     _StatusFilterChipData(
       filter: ProjectStatusFilter.overdue,
       label: 'Overdue',
-      icon: Icons.warning_amber_rounded,
       color: Color(0xFFF97316),
     ),
   ];
@@ -105,7 +100,7 @@ class _ProjectDashboardState extends State<ProjectDashboard> {
 
   Widget _buildStatusFilterCarousel() {
     return SizedBox(
-      height: 70,
+      height: 40,
       child: Obx(() {
         final selectedFilter = paginationController.statusFilter.value;
         return ListView.separated(
@@ -486,13 +481,11 @@ class _StatChip extends StatelessWidget {
 class _StatusFilterChipData {
   final ProjectStatusFilter filter;
   final String label;
-  final IconData icon;
   final Color color;
 
   const _StatusFilterChipData({
     required this.filter,
     required this.label,
-    required this.icon,
     required this.color,
   });
 }
@@ -537,45 +530,13 @@ class _StatusFilterChip extends StatelessWidget {
                 ]
               : [],
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(data.icon, color: Colors.white, size: 16),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              data.label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(width: 8),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                count.toString().padLeft(2, '0'),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
+        child: Text(
+          data.label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );

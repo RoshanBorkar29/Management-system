@@ -121,7 +121,6 @@ class UserDashboardController extends GetxController {
         .where((p) => p.status == 'DONE' || p.status == 'COMPLETED')
         .length;
     final inProgress = all.where((p) => p.status == 'IN_PROGRESS').length;
-    final review = all.where((p) => p.status == 'REVIEW').length;
     final notStarted = all
         .where((p) => p.status == 'NOT_STARTED' || p.status == 'TODO')
         .length;
@@ -134,11 +133,6 @@ class UserDashboardController extends GetxController {
         color: AppColors.info,
       ),
       StatusData(
-        label: 'Review',
-        count: review,
-        color: const Color(0xFFA855F7),
-      ),
-      StatusData(
         label: 'Not Started',
         count: notStarted,
         color: const Color(0xFFD1D5DB),
@@ -149,7 +143,9 @@ class UserDashboardController extends GetxController {
 
   String get completionPercent {
     if (projects.isEmpty) return '0';
-    final done = projects.where((p) => p.status == 'DONE' || p.status == 'COMPLETED').length;
+    final done = projects
+        .where((p) => p.status == 'DONE' || p.status == 'COMPLETED')
+        .length;
     return ((done / projects.length) * 100).toStringAsFixed(0);
   }
 

@@ -114,7 +114,6 @@ class DashboardController extends GetxController {
         .where((p) => p.status == 'DONE' || p.status == 'COMPLETED')
         .length;
     final inProgress = all.where((p) => p.status == 'IN_PROGRESS').length;
-    final review = all.where((p) => p.status == 'REVIEW').length;
     final notStarted = all
         .where((p) => p.status == 'NOT_STARTED' || p.status == 'TODO')
         .length;
@@ -125,11 +124,6 @@ class DashboardController extends GetxController {
         label: 'In Progress',
         count: inProgress,
         color: AppColors.info,
-      ),
-      StatusData(
-        label: 'Review',
-        count: review,
-        color: const Color(0xFFA855F7),
       ),
       StatusData(
         label: 'Not Started',
