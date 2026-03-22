@@ -40,12 +40,28 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
       return;
     }
 
-    final role = AuthController.to.role.value;
-    final actorId = role == 'ADMIN'
-        ? AuthController.to.currentUserId.value
-        : (AuthController.to.currentUserId.value.isNotEmpty
-              ? AuthController.to.currentUserId.value
-              : widget.project.ownerId);
+    if (!_canApproveTasks) {
+      Get.snackbar(
+        'Action blocked',
+        'Only the project owner or an admin can approve this task.',
+        backgroundColor: AppColors.error,
+        colorText: Colors.white,
+      );
+      return;
+    }
+
+    final role = _normalizedRole;
+    final actorId = _resolveActorIdForApproval();
+
+    if (actorId.isEmpty) {
+      Get.snackbar(
+        'Action blocked',
+        'We could not resolve your identity for approval. Please relaunch or contact an admin.',
+        backgroundColor: AppColors.error,
+        colorText: Colors.white,
+      );
+      return;
+    }
 
     final ok = await _taskController.approveTaskCompletion(
       taskId: taskId,
@@ -107,6 +123,8 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
           return status == 'IN_PROGRESS';
         case 'REVIEW':
           return status == 'REVIEW';
+        case 'OVERDUE':
+          return status == 'OVERDUE';
         case 'DONE':
           return status == 'DONE' || status == 'COMPLETED';
         default:
@@ -142,6 +160,10 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
       case 'REVIEW':
         return all
             .where((t) => (t.status ?? '').toUpperCase() == 'REVIEW')
+            .length;
+      case 'OVERDUE':
+        return all
+            .where((t) => (t.status ?? '').toUpperCase() == 'OVERDUE')
             .length;
       case 'DONE':
         return all
@@ -190,6 +212,16 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
     return '${months[d.month - 1]} ${d.day}, ${d.year}';
   }
 
+  Color _remainingTimeColor(int daysLeft) {
+    if (daysLeft <= 10) {
+      return AppColors.error;
+    }
+    if (daysLeft <= 25) {
+      return AppColors.warning;
+    }
+    return AppColors.success;
+  }
+
   String _memberShort(String name) {
     final clean = name.trim();
     if (clean.isEmpty) return '?';
@@ -203,6 +235,70 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
     );
     final name = match?.name.trim() ?? '';
     return name.isEmpty ? ownerId : name;
+  }
+
+  String get _projectOwnerId => widget.project.ownerId.trim();
+
+  String get _normalizedRole =>
+      AuthController.to.role.value.trim().toUpperCase();
+
+  String get _currentUsername => AuthController.to.username.value.trim();
+
+  bool get _isAdminSession => _normalizedRole == 'ADMIN';
+
+  String _resolvedMemberIdFromSession() {
+    final username = _currentUsername.toLowerCase();
+    if (username.isEmpty) return '';
+
+    final member = _memberController.members.firstWhereOrNull((m) {
+      final email = (m.email ?? '').trim().toLowerCase();
+      final id = (m.id ?? '').trim().toLowerCase();
+      final name = m.name.trim().toLowerCase();
+      return username == email || username == id || username == name;
+    });
+
+    if (member != null && (member.id ?? '').trim().isNotEmpty) {
+      return member.id!.trim();
+    }
+
+    final stored = AuthController.to.currentUserId.value.trim();
+    return stored;
+  }
+
+  bool get _isProjectOwnerSession {
+    final ownerId = _projectOwnerId;
+    if (ownerId.isEmpty) return false;
+    final normalizedOwner = ownerId.toLowerCase();
+
+    bool matches(String candidate) {
+      final value = candidate.trim();
+      if (value.isEmpty) return false;
+      return value.toLowerCase() == normalizedOwner;
+    }
+
+    return matches(_resolvedMemberIdFromSession()) ||
+        matches(AuthController.to.currentUserId.value) ||
+        matches(_currentUsername);
+  }
+
+  bool get _canApproveTasks => _isAdminSession || _isProjectOwnerSession;
+
+  String _resolveActorIdForApproval() {
+    if (_isAdminSession) {
+      final adminId = AuthController.to.currentUserId.value.trim();
+      if (adminId.isNotEmpty) {
+        return adminId;
+      }
+      final adminUsername = _currentUsername;
+      return adminUsername.isNotEmpty ? adminUsername : 'ADMIN';
+    }
+
+    final ownerId = _projectOwnerId;
+    if (ownerId.isNotEmpty) {
+      return ownerId;
+    }
+
+    return _resolvedMemberIdFromSession();
   }
 
   List<String> _projectMembers(List<Task> tasks) {
@@ -238,6 +334,8 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
       project.startDate,
       project.deadLine,
     );
+    final remainingDays = DateTimeHelper.remainingDays(project.deadLine);
+    final timeRemainingColor = _remainingTimeColor(remainingDays);
     final projectProgress = (project.progress / 100).clamp(0.0, 1.0);
 
     return Scaffold(
@@ -305,17 +403,6 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                project.description,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.85),
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
                                 project.title,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
@@ -326,6 +413,18 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
+                              const SizedBox(height: 4),
+                              if (project.description.trim().isNotEmpty)
+                                Text(
+                                  project.description,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.85),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                             ],
                           ),
                         ),
@@ -375,7 +474,30 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Project Progress',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.88),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Text(
+                                '${project.progress}%',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          SizedBox(height: 6),
                           ClipRRect(
                             borderRadius: BorderRadius.circular(999),
                             child: LinearProgressIndicator(
@@ -392,65 +514,58 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
+
+                          const SizedBox(height: 14),
+
                           Row(
-                            children: [
-                              Text(
-                                'Project Progress',
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.88),
-                                ),
-                              ),
-                              const Spacer(),
-                              Text(
-                                '${project.progress}%',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 18,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(999),
-                            child: LinearProgressIndicator(
-                              minHeight: 10,
-                              value: remainingTimeProgress,
-                              backgroundColor: Colors.white.withValues(
-                                alpha: 0.35,
-                              ),
-                              valueColor: const AlwaysStoppedAnimation<Color>(
-                                Colors.white,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
                                 'Time Remaining',
                                 style: TextStyle(
                                   color: Colors.white.withValues(alpha: 0.88),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              const Spacer(),
+
                               Text(
-                                '${(remainingTimeProgress * 100).toStringAsFixed(0)}%',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 18,
+                                '${_dateShort(project.startDate)} - ${_dateShort(project.deadLine)}',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.8),
+                                  fontSize: 12,
+                                ),
+                              ),
+                              Text(
+                                _deadlineText(project.deadLine),
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                  fontSize: 13,
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12),
+
+                          const SizedBox(height: 6),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(999),
+                            child: LinearProgressIndicator(
+                              minHeight: 10,
+                              value: remainingTimeProgress.clamp(0.0, 1.0),
+                              backgroundColor: Colors.white.withValues(
+                                alpha: 0.2,
+                              ),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                timeRemainingColor,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
                           Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
-                              'Contribution remaining to assign: $_remainingContribution%',
+                              'Task Snapshot',
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.88),
                                 fontSize: 12,
@@ -502,6 +617,7 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
                               ),
                             ],
                           ),
+                          const SizedBox(height: 6),
                         ],
                       ),
                     ),
@@ -636,7 +752,10 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
                   onChanged: (val) => _taskSearchQuery.value = val,
                   decoration: InputDecoration(
                     hintText: "Search tasks by name or assignee…",
-                    hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
+                    hintStyle: const TextStyle(
+                      color: Colors.grey,
+                      fontSize: 14,
+                    ),
                     filled: true,
                     fillColor: Colors.white,
                     prefixIcon: const Icon(Icons.search, color: Colors.grey),
@@ -691,6 +810,13 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
                       ),
                       const SizedBox(width: 8),
                       _FilterChip(
+                        label: 'Overdue',
+                        count: overdueCount,
+                        selected: _selectedFilter.value == 'OVERDUE',
+                        onTap: () => _selectedFilter.value = 'OVERDUE',
+                      ),
+                      const SizedBox(width: 8),
+                      _FilterChip(
                         label: 'Done',
                         count: doneCount,
                         selected: _selectedFilter.value == 'DONE',
@@ -715,19 +841,17 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Column(
-                    children: tasks
-                        .map(
-                          (t) => _TaskCard(
-                            task: t,
-                            deadlineText: _deadlineText(t.deadLine),
-                            ownerName: _memberNameById(t.ownerId),
-                            onApprove:
-                                (t.status ?? '').toUpperCase() == 'REVIEW'
-                                ? () => _approveTask(t)
-                                : null,
-                          ),
-                        )
-                        .toList(),
+                    children: tasks.map((t) {
+                      final status = (t.status ?? '').toUpperCase();
+                      final showApprove =
+                          status == 'REVIEW' && _canApproveTasks;
+                      return _TaskCard(
+                        task: t,
+                        deadlineText: _deadlineText(t.deadLine),
+                        ownerName: _memberNameById(t.ownerId),
+                        onApprove: showApprove ? () => _approveTask(t) : null,
+                      );
+                    }).toList(),
                   ),
                 ),
               const SizedBox(height: 28),

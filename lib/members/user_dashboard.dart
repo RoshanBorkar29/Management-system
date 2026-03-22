@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:managementt/admin/project_detail_page.dart';
 import 'package:managementt/components/app_colors.dart';
 import 'package:managementt/components/date_time_helper.dart';
 import 'package:managementt/components/app_render_entrance.dart';
@@ -11,6 +12,7 @@ import 'package:managementt/components/stat_card.dart';
 import 'package:managementt/controller/user_nav_controller.dart';
 import 'package:managementt/controller/user_dashboard_controller.dart';
 import 'package:managementt/members/user_project_dashboard.dart';
+import 'package:managementt/service/task_service.dart';
 
 class UserDashboard extends StatelessWidget {
   const UserDashboard({super.key});
@@ -40,8 +42,14 @@ class UserDashboard extends StatelessWidget {
 
           final completionPercent = dc.completionPercent;
 
-          return SingleChildScrollView(
-            child: Column(
+          return RefreshIndicator(
+            onRefresh: () async {
+              await TaskService().checkOverdue();
+              await dc.loadDashboard();
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
               children: [
                 /// HEADER
                 Container(
@@ -166,7 +174,21 @@ class UserDashboard extends StatelessWidget {
                             ),
                             const SizedBox(height: 8),
                             ...criticalAlerts.map(
-                              (item) => AlertTile(item: item),
+                              (item) => AlertTile(
+                                item: item,
+                                onTap: item.project != null
+                                    ? () => Get.to(
+                                          () => ProjectDetailPage(
+                                            project: item.project!,
+                                            projectMemberNames: [
+                                              dc.getMemberName(
+                                                item.project!.ownerId,
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                    : null,
+                              ),
                             ),
                           ],
                         ),
@@ -392,6 +414,7 @@ class UserDashboard extends StatelessWidget {
                 const SizedBox(height: 24),
               ],
             ),
+          ),
           );
         }),
       ),

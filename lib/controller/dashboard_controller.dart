@@ -98,6 +98,10 @@ class DashboardController extends GetxController {
   int get activeProjectCount =>
       projects.where((p) => p.status == 'IN_PROGRESS').length;
 
+  int get completedProjectCount => projects
+      .where((p) => p.status == 'DONE' || p.status == 'COMPLETED')
+      .length;
+
   int get totalTaskCount => tasks.length;
 
   int get overdueCount => projects.where((p) => p.status == 'OVERDUE').length;
@@ -106,9 +110,13 @@ class DashboardController extends GetxController {
 
   List<StatusData> get statusData {
     final all = projects;
-    final done = all.where((p) => p.status == 'DONE').length;
+    final done = all
+        .where((p) => p.status == 'DONE' || p.status == 'COMPLETED')
+        .length;
     final inProgress = all.where((p) => p.status == 'IN_PROGRESS').length;
-    final notStarted = all.where((p) => p.status == 'NOT_STARTED').length;
+    final notStarted = all
+        .where((p) => p.status == 'NOT_STARTED' || p.status == 'TODO')
+        .length;
     final overdue = all.where((p) => p.status == 'OVERDUE').length;
     return [
       StatusData(label: 'Done', count: done, color: AppColors.success),
@@ -122,13 +130,15 @@ class DashboardController extends GetxController {
         count: notStarted,
         color: const Color(0xFFD1D5DB),
       ),
-      StatusData(label: 'Overdue', count: overdue, color: AppColors.warning),
+      StatusData(label: 'Overdue', count: overdue, color: AppColors.error),
     ];
   }
 
   String get completionPercent {
     if (projects.isEmpty) return '0';
-    final done = projects.where((p) => p.status == 'DONE').length;
+    final done = projects
+        .where((p) => p.status == 'DONE' || p.status == 'COMPLETED')
+        .length;
     return ((done / projects.length) * 100).toStringAsFixed(0);
   }
 
@@ -244,7 +254,7 @@ class DashboardController extends GetxController {
             : remaining == 0
             ? 'Due today'
             : '$remaining d remaining';
-        alerts.add(AlertItem(title: p.title, subtitle: subtitle));
+        alerts.add(AlertItem(title: p.title, subtitle: subtitle, project: p));
       }
     }
     alerts.sort((a, b) => a.subtitle.compareTo(b.subtitle));

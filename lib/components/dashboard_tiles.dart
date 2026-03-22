@@ -4,46 +4,50 @@ import 'package:managementt/model/dashboard_models.dart';
 
 class AlertTile extends StatelessWidget {
   final AlertItem item;
+  final VoidCallback? onTap;
 
-  const AlertTile({super.key, required this.item});
+  const AlertTile({super.key, required this.item, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-      decoration: BoxDecoration(
-        color: AppColors.alertBackground,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.alertBorder),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.error_outline, color: AppColors.error, size: 18),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.title,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-                Text(
-                  item.subtitle,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.blueGrey.withValues(alpha: 0.9),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color.fromARGB(255, 255, 158, 162)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.error_outline, color: AppColors.error, size: 18),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.title,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
-                ),
-              ],
+                  Text(
+                    item.subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.blueGrey.withValues(alpha: 0.9),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Icon(
-            Icons.chevron_right,
-            color: Colors.blueGrey.withValues(alpha: 0.6),
-          ),
-        ],
+            Icon(
+              Icons.chevron_right,
+              color: Colors.blueGrey.withValues(alpha: 0.6),
+            ),
+          ],
+        ),
       ),
     );
   }

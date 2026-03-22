@@ -2,16 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:managementt/components/app_button.dart';
 import 'package:managementt/components/app_colors.dart';
-import 'package:managementt/components/app_textfield.dart';
 import 'package:managementt/controller/auth_controller.dart';
 import 'package:managementt/service/auth_service.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   LoginPage({super.key});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final AuthService _authService = AuthService();
-  final _isLoading = false.obs;
+  final RxBool _isLoading = false.obs;
+  final RxBool _obscurePassword = true.obs;
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,15 +108,9 @@ class LoginPage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 40),
-                      AppTextfield(
-                        controller: emailController,
-                        label: "Email",
-                      ),
+                      _buildEmailField(),
                       const SizedBox(height: 20),
-                      AppTextfield(
-                        controller: passwordController,
-                        label: "Password",
-                      ),
+                      _buildPasswordField(),
                       const SizedBox(height: 40),
                       Obx(
                         () => _isLoading.value
@@ -113,7 +120,8 @@ class LoginPage extends StatelessWidget {
                                 buttonColor: AppColors.primaryBlue,
                                 onPressed: () async {
                                   final email = emailController.text.trim();
-                                  final password = passwordController.text.trim();
+                                  final password = passwordController.text
+                                      .trim();
 
                                   if (email.isEmpty || password.isEmpty) {
                                     Get.snackbar(
@@ -126,7 +134,8 @@ class LoginPage extends StatelessWidget {
 
                                   _isLoading.value = true;
                                   try {
-                                    final authResponse = await _authService.login(email, password);
+                                    final authResponse = await _authService
+                                        .login(email, password);
                                     await AuthController.to.setAuthData(
                                       authResponse,
                                       loginUsername: email,
@@ -150,6 +159,61 @@ class LoginPage extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+InputDecoration _loginFieldDecoration(String label, {Widget? suffixIcon}) {
+  return InputDecoration(
+    labelText: label,
+    labelStyle: const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: Color(0xFFF59E0B)),
+    ),
+    suffixIcon: suffixIcon,
+  );
+}
+
+extension on _LoginPageState {
+  Widget _buildEmailField() {
+    return TextField(
+      controller: emailController,
+      keyboardType: TextInputType.emailAddress,
+      decoration: _loginFieldDecoration('Email'),
+      style: const TextStyle(fontSize: 14, color: Color(0xFF374151)),
+    );
+  }
+
+  Widget _buildPasswordField() {
+    return Obx(
+      () => TextField(
+        controller: passwordController,
+        obscureText: _obscurePassword.value,
+        decoration: _loginFieldDecoration(
+          'Password',
+          suffixIcon: GestureDetector(
+            onTap: () => _obscurePassword.value = !_obscurePassword.value,
+            child: Icon(
+              _obscurePassword.value
+                  ? Icons.visibility_outlined
+                  : Icons.visibility_off_outlined,
+              color: const Color(0xFF9CA3AF),
+              size: 20,
+            ),
+          ),
+        ),
+        style: const TextStyle(fontSize: 14, color: Color(0xFF374151)),
       ),
     );
   }

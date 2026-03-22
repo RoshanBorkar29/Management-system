@@ -13,6 +13,7 @@ import 'package:managementt/controller/dashboard_controller.dart';
 import 'package:managementt/controller/task_controller.dart';
 import 'package:managementt/controller/project_pagination_controller.dart';
 import 'package:managementt/model/filter_enums.dart';
+import 'package:managementt/service/task_service.dart';
 
 const _months = [
   'Jan',
@@ -40,19 +41,51 @@ class _ProjectDashboardState extends State<ProjectDashboard> {
   late ProjectPaginationController paginationController;
   final TaskController taskController = Get.find<TaskController>();
   final DashboardController dc = Get.find<DashboardController>();
+  static const List<_StatusFilterChipData> _statusFilterOptions = [
+    _StatusFilterChipData(
+      filter: ProjectStatusFilter.all,
+      label: 'All',
+      color: Color.fromARGB(255, 203, 188, 230),
+    ),
+    _StatusFilterChipData(
+      filter: ProjectStatusFilter.active,
+      label: 'In Progress',
+      color: Color(0xFF2563EB),
+    ),
+    _StatusFilterChipData(
+      filter: ProjectStatusFilter.completed,
+      label: 'Completed',
+      color: Color(0xFF14B8A6),
+    ),
+    _StatusFilterChipData(
+      filter: ProjectStatusFilter.notStarted,
+      label: 'Not Started',
+      color: Color.fromARGB(255, 249, 188, 22),
+    ),
+    _StatusFilterChipData(
+      filter: ProjectStatusFilter.overdue,
+      label: 'Overdue',
+      color: Color(0xFFF97316),
+    ),
+  ];
 
   @override
   void initState() {
     super.initState();
-    paginationController = Get.isRegistered<ProjectPaginationController>()
+    final alreadyRegistered = Get.isRegistered<ProjectPaginationController>();
+    paginationController = alreadyRegistered
         ? Get.find<ProjectPaginationController>()
         : Get.put(ProjectPaginationController());
     paginationController.updateStatusFilter(ProjectStatusFilter.all);
     paginationController.updatePriorityFilter(PriorityFilter.all);
     paginationController.updateSearchQuery('');
-    // Force fresh load on entry to avoid stale/empty cached pagination state.
-    paginationController.resetPagination();
-    paginationController.loadNextPage();
+
+    // Only trigger a manual refresh when reusing an existing controller.
+    // Newly created controllers automatically load their first page in onInit.
+    if (alreadyRegistered) {
+      paginationController.resetPagination();
+      paginationController.loadNextPage();
+    }
   }
 
   @override
@@ -68,6 +101,56 @@ class _ProjectDashboardState extends State<ProjectDashboard> {
     return '${_months[now.month - 1]} ${now.day}, ${now.year}';
   }
 
+  Widget _buildStatusFilterCarousel() {
+    return SizedBox(
+      height: 40,
+      child: Obx(() {
+        final selectedFilter = paginationController.statusFilter.value;
+        return ListView.separated(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          padding: EdgeInsets.zero,
+          itemCount: _statusFilterOptions.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 12),
+          itemBuilder: (context, index) {
+            final option = _statusFilterOptions[index];
+            final count = _projectCountFor(option.filter);
+            return _StatusFilterChip(
+              data: option,
+              isActive: option.filter == selectedFilter,
+              count: count,
+              onTap: () =>
+                  paginationController.updateStatusFilter(option.filter),
+            );
+          },
+        );
+      }),
+    );
+  }
+
+  int _projectCountFor(ProjectStatusFilter filter) {
+    final projects = paginationController.items;
+    if (filter == ProjectStatusFilter.all) {
+      return projects.length;
+    }
+
+    return projects.where((project) {
+      final status = ((project.status) ?? '').toUpperCase();
+      switch (filter) {
+        case ProjectStatusFilter.active:
+          return status == 'IN_PROGRESS';
+        case ProjectStatusFilter.completed:
+          return status == 'DONE' || status == 'COMPLETED';
+        case ProjectStatusFilter.overdue:
+          return status == 'OVERDUE';
+        case ProjectStatusFilter.notStarted:
+          return status == 'NOT_STARTED' || status == 'TODO';
+        case ProjectStatusFilter.all:
+          return true;
+      }
+    }).length;
+  }
+
   @override
   Widget build(BuildContext context) {
     final topPad = MediaQuery.of(context).padding.top;
@@ -77,6 +160,7 @@ class _ProjectDashboardState extends State<ProjectDashboard> {
       body: AppRenderEntrance(
         child: RefreshIndicator(
           onRefresh: () async {
+            await TaskService().checkOverdue();
             paginationController.resetPagination();
             await paginationController.loadNextPage();
           },
@@ -87,7 +171,7 @@ class _ProjectDashboardState extends State<ProjectDashboard> {
               SliverAppBar(
                 pinned: true,
                 floating: false,
-                expandedHeight: 230,
+                expandedHeight: 330,
                 elevation: 0,
                 backgroundColor: Colors.transparent,
                 flexibleSpace: FlexibleSpaceBar(
@@ -149,6 +233,12 @@ class _ProjectDashboardState extends State<ProjectDashboard> {
                           /// STAT CHIPS
                           Obx(() {
                             final projects = paginationController.items;
+                            final completedCount = dc.completedProjectCount;
+                            final notStartedCount = projects.where((t) {
+                              final status = (t.status ?? '').toUpperCase();
+                              return status == 'NOT_STARTED' ||
+                                  status == 'TODO';
+                            }).length;
                             return Wrap(
                               spacing: 8,
                               runSpacing: 8,
@@ -166,10 +256,13 @@ class _ProjectDashboardState extends State<ProjectDashboard> {
                                   color: const Color(0xFF4ADE80),
                                 ),
                                 _StatChip(
+                                  label: 'Not Started',
+                                  count: notStartedCount,
+                                  color: const Color(0xFFE5E7EB),
+                                ),
+                                _StatChip(
                                   label: 'Completed',
-                                  count: projects
-                                      .where((t) => t.status == 'DONE')
-                                      .length,
+                                  count: completedCount,
                                   color: const Color(0xFFA78BFA),
                                 ),
                                 _StatChip(
@@ -182,6 +275,9 @@ class _ProjectDashboardState extends State<ProjectDashboard> {
                               ],
                             );
                           }),
+
+                          /// STATUS FILTERS
+                          _buildStatusFilterCarousel(),
 
                           /// SEARCH
                           SizedBox(
@@ -390,6 +486,71 @@ class _StatChip extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _StatusFilterChipData {
+  final ProjectStatusFilter filter;
+  final String label;
+  final Color color;
+
+  const _StatusFilterChipData({
+    required this.filter,
+    required this.label,
+    required this.color,
+  });
+}
+
+class _StatusFilterChip extends StatelessWidget {
+  final _StatusFilterChipData data;
+  final bool isActive;
+  final int count;
+  final VoidCallback onTap;
+
+  const _StatusFilterChip({
+    required this.data,
+    required this.isActive,
+    required this.count,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isActive
+              ? data.color.withValues(alpha: 0.22)
+              : Colors.white.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(
+            color: isActive ? data.color : Colors.white.withValues(alpha: 0.18),
+            width: 1.2,
+          ),
+          boxShadow: isActive
+              ? [
+                  BoxShadow(
+                    color: data.color.withValues(alpha: 0.35),
+                    blurRadius: 12,
+                    offset: const Offset(0, 5),
+                  ),
+                ]
+              : [],
+        ),
+        child: Text(
+          data.label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }

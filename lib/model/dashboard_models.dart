@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:managementt/model/task.dart';
 
 class StatusData {
   final String label;
@@ -15,8 +16,9 @@ class StatusData {
 class AlertItem {
   final String title;
   final String subtitle;
+  final Task? project;
 
-  const AlertItem({required this.title, required this.subtitle});
+  const AlertItem({required this.title, required this.subtitle, this.project});
 }
 
 class DeadlineItem {
