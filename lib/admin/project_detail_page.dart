@@ -6,6 +6,7 @@ import 'package:managementt/components/date_time_helper.dart';
 import 'package:managementt/controller/auth_controller.dart';
 import 'package:managementt/controller/member_controller.dart';
 import 'package:managementt/controller/task_controller.dart';
+import 'package:managementt/members/collaboration_page.dart';
 import 'package:managementt/model/task.dart';
 
 class ProjectDetailPage extends StatefulWidget {
@@ -498,9 +499,15 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
                                 ),
                               ),
                               const SizedBox(height: 4),
-                             
                             ],
                           ),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          onPressed: () {
+                            Get.to(() => CollaborationPage(), arguments: project.id);
+                          },
+                          icon: Icon(Icons.people, color: Colors.white),
                         ),
                       ],
                     ),

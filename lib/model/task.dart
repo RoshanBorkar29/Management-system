@@ -17,6 +17,8 @@ class Task {
   int completedTask;
   int? criticalDays;
   bool? isProject;
+  List<String>? collaborators;
+  List<String>? dependentTasks;
 
   Task({
     this.id,
@@ -37,6 +39,8 @@ class Task {
     this.remainingTask = 0,
     this.completedTask = 0,
     this.isProject,
+    this.collaborators,
+    this.dependentTasks,
   });
 
   factory Task.fromJson(Map<String, dynamic> json) {
@@ -76,6 +80,12 @@ class Task {
                 : int.tryParse(json['criticalDays'].toString()))
           : 7, //default 7 days
       isProject: json['isProject'] ?? false,
+      collaborators: json['collaborators'] != null
+          ? List<String>.from(json['collaborators'])
+          : null,
+      dependentTasks: json['dependentTasks'] != null
+          ? List<String>.from(json['dependentTasks'])
+          : null,
     );
   }
 
@@ -105,6 +115,8 @@ class Task {
       "completedTask": completedTask,
       "criticalDays": criticalDays ?? 7,
       "isProject": isProject ?? false,
+      "collaborators": collaborators,
+      "dependentTasks": dependentTasks,
     };
   }
 }
