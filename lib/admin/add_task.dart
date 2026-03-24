@@ -9,13 +9,13 @@ import 'package:managementt/model/task.dart';
 
 class AddTask extends StatefulWidget {
   final String defaultType;
-  final String? parentTaskId;
+  final String? parentId;
   final Task? taskToEdit;
 
   const AddTask({
     super.key,
     this.defaultType = 'PROJECT',
-    this.parentTaskId,
+    this.parentId,
     this.taskToEdit,
   });
 
@@ -147,10 +147,11 @@ class _AddTaskState extends State<AddTask> with TickerProviderStateMixin {
     descriptionController.text = task.description;
     priorityController.value = task.priority.toLowerCase();
     selectedMemberId.value = task.ownerId;
-    final category = (task.category ?? '').trim().toUpperCase();
-    selectedCategory.value = _categoryController.categories.contains(category)
-        ? category
-        : '';
+    final category = (task.category ?? '').trim();
+    final matchedCategory = _categoryController.categories.firstWhereOrNull(
+      (item) => item.trim().toLowerCase() == category.toLowerCase(),
+    );
+    selectedCategory.value = matchedCategory ?? '';
     selectedDeadline.value = task.deadLine;
     selectedStartDate.value = task.startDate;
     criticalDaysController.text = task.criticalDays.toString();
@@ -175,8 +176,8 @@ class _AddTaskState extends State<AddTask> with TickerProviderStateMixin {
 
   bool get _isProjectTask =>
       widget.defaultType.toUpperCase() == 'TASK' &&
-      widget.parentTaskId != null &&
-      widget.parentTaskId!.isNotEmpty;
+      widget.parentId != null &&
+      widget.parentId!.isNotEmpty;
 
   bool get _isEditMode =>
       widget.taskToEdit != null &&
@@ -187,11 +188,11 @@ class _AddTaskState extends State<AddTask> with TickerProviderStateMixin {
       _isEditMode ? widget.taskToEdit!.contributionPercent : 0;
 
   int get _assignedContribution {
-    final parentId = widget.parentTaskId;
+    final parentId = widget.parentId;
     if (parentId == null || parentId.isEmpty) return 0;
     return _taskController.tasks
         .where((task) => (task.type ?? '').toUpperCase() == 'TASK')
-        .where((task) => task.parentTaskId == parentId)
+        .where((task) => task.parentId == parentId)
         .fold<int>(0, (sum, task) => sum + task.contributionPercent);
   }
 
@@ -1235,7 +1236,7 @@ class _AddTaskState extends State<AddTask> with TickerProviderStateMixin {
           ? widget.taskToEdit?.category
           : selectedCategory.value,
       ownerId: selectedMemberId.value,
-      parentTaskId: widget.taskToEdit?.parentTaskId ?? widget.parentTaskId,
+      parentId: widget.taskToEdit?.parentId ?? widget.parentId,
       contributionPercent: _isProjectTask ? contributionValue : 0,
       deadLine: selectedDeadline.value,
       startDate: selectedStartDate.value,
