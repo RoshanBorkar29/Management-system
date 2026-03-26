@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart';
 import 'package:managementt/components/app_confirm_dialog.dart';
 import 'package:managementt/components/app_render_entrance.dart';
 import 'package:managementt/controller/admin_nav_controller.dart';
@@ -101,6 +102,7 @@ class _MemberProfilePageState extends State<MemberProfilePage> {
                             onTap: () {
                               final nav = Get.find<AdminNavController>();
                               nav.changePage(0);
+                              Get.back();
                             },
                             child: Container(
                               padding: const EdgeInsets.all(8),
@@ -772,7 +774,6 @@ class _MemberProfilePageState extends State<MemberProfilePage> {
 }
 
 // ─── Supporting widgets ───
-
 
 class _InfoRow extends StatelessWidget {
   final IconData icon;

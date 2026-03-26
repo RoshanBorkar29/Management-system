@@ -83,7 +83,9 @@ class AdminDashboard extends StatelessWidget {
                                   Text(
                                     "Welcome back,",
                                     style: TextStyle(
-                                      color: Colors.white.withValues(alpha: 0.8),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.8,
+                                      ),
                                       fontSize: 16,
                                     ),
                                   ),
@@ -99,7 +101,8 @@ class AdminDashboard extends StatelessWidget {
                               ),
                             ),
                             GestureDetector(
-                              onTap: () => Get.to(() => const AdminProfilePage()),
+                              onTap: () =>
+                                  Get.to(() => const AdminProfilePage()),
                               child: CircleAvatar(
                                 radius: 21,
                                 backgroundColor: Colors.white.withValues(
